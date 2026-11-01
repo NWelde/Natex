@@ -1,16 +1,36 @@
 {
-    "name": "ForTex",
-    "description": "Create flexible-sized, multi-line LaTeX formulas on a Quill text editor.",
-    "version": "2.1",
+    "name": "Natex",
+    "description": "Write LaTeX in Quill-based text editors, with live preview and your own shortcuts.",
+    "version": "3.0",
     "manifest_version": 3,
     "action": {
-        "default_popup": "fortex.html",
-        "default_icon": "fortex-icon.png"
+        "default_popup": "popup.html",
+        "default_title": "Natex",
+        "default_icon": {
+            "16": "icons/icon16.png",
+            "32": "icons/icon32.png",
+            "48": "icons/icon48.png",
+            "128": "icons/icon128.png"
+        }
     },
     "background": {
         "service_worker": "background.js"
     },
     "options_page": "options.html",
-    "permissions": ["storage", "scripting", "tabs"],
-    "optional_host_permissions": ["https://*/*", "http://*/*"]
+    "permissions": [
+        "storage",
+        "scripting",
+        "tabs",
+        "activeTab"
+    ],
+    "optional_host_permissions": [
+        "https://*/*",
+        "http://*/*"
+    ],
+    "icons": {
+        "16": "icons/icon16.png",
+        "32": "icons/icon32.png",
+        "48": "icons/icon48.png",
+        "128": "icons/icon128.png"
+    }
 }
