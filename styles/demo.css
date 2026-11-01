@@ -1,93 +1,14 @@
 @import url('./theme.css');
 
-body {
-  padding: 20px;
-}
+body { padding: 48px 24px; }
+.page { max-width: 760px; margin: 0 auto; }
+.card { display: flex; flex-direction: column; gap: 16px; }
+.card p { margin: 0; color: var(--muted); line-height: 22px; }
+.card p b { color: var(--ink); }
 
-.page {
-  max-width: 920px;
-}
-
-.card {
-  padding: 18px;
-}
-
-.header {
-  margin-bottom: 10px;
-}
-
-.logo {
-  width: 34px;
-  height: 34px;
-}
-
-h1 {
-  font-size: 18px;
-}
-
-p {
-  margin: 8px 0 14px;
-  line-height: 1.4;
-}
-
-/* Keep the Quill editor readable: render the editor area as a light surface */
-.quill {
-  border-radius: 14px;
-  overflow: hidden;
-  background: rgba(252, 252, 252, 0.04);
-}
-
-.quill .ql-toolbar.ql-snow {
-  border: 0;
-  background: rgba(255, 255, 255, 0.06);
-}
-
-/* Make toolbar controls visible on dark background */
-.quill .ql-toolbar.ql-snow .ql-stroke {
-  stroke: #ffffff;
-}
-
-.quill .ql-toolbar.ql-snow .ql-fill {
-  fill: #ffffff;
-}
-
-.quill .ql-toolbar.ql-snow .ql-picker,
-.quill .ql-toolbar.ql-snow .ql-picker-label,
-.quill .ql-toolbar.ql-snow .ql-picker-item {
-  color: #ffffff;
-}
-
-.quill .ql-toolbar.ql-snow button:hover,
-.quill .ql-toolbar.ql-snow button:focus {
-  background: rgba(255, 255, 255, 0.08);
-}
-
-/* Keep the editor surface white and text black */
-.quill .ql-container.ql-snow {
-  border: 0;
-  background: #ffffff;
-}
-
-.quill .ql-editor {
-  color: #000000 !important;
-  -webkit-text-fill-color: #000000 !important;
-  caret-color: #000000 !important;
-}
-
-/* set font themeto black */
-.quill .ql-editor p,
-.quill .ql-editor li,
-.quill .ql-editor span {
-  color: #000000 !important;
-  -webkit-text-fill-color: #000000 !important;
-}
-
-.quill .ql-editor.ql-blank::before {
-  color: rgba(0, 0, 0, 0.55) !important;
-  -webkit-text-fill-color: rgba(0, 0, 0, 0.55) !important;
-}
-
-/* Demo editor height */
-#editor {
-  height: 200px;
-}
+/* Host editor stays light, like a real forum page */
+.quill { border-radius: 8px; overflow: visible; background: #fff; }
+.quill .ql-toolbar.ql-snow { border: 0; border-bottom: 1px solid #d0d7de; border-radius: 8px 8px 0 0; background: #fff; }
+.quill .ql-container.ql-snow { border: 0; border-radius: 0 0 8px 8px; background: #fff; font-size: 15px; }
+.quill .ql-editor { color: #1f2328; }
+#editor { height: 220px; }

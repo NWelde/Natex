@@ -2,15 +2,18 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>ForTex Demo – Quill Editor</title>
-  <link rel="icon" href="../fortex-icon.png" type="image/png" />
-  <link rel="apple-touch-icon" href="../fortex-icon.png" />
+  <title>Natex Demo – Quill Editor</title>
+  <link rel="icon" href="../icons/icon32.png" type="image/png" />
+  <link rel="apple-touch-icon" href="../icons/icon128.png" />
   <!-- Quill CSS from CDN -->
   <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet" />
   <link rel="stylesheet" href="../styles/demo.css" />
   <!-- KaTeX for rendering formulas in the demo environment -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.js"></script> 
+
+  <!--NOTE: Here is were the main katex render is defined -->
+
   <script>
     // Fallback: if KaTeX fails to load from CDN, provide a minimal stub so
     // Quill's formula module can call katex.render without throwing.
@@ -28,11 +31,11 @@
 <body>
   <div class="page">
     <div class="card">
-      <div class="header">
-        <img class="logo" src="../fortex-icon.png" alt="ForTex" />
-        <h1>ForTex Demo – Quill Editor</h1>
+      <div class="brand">
+        <img class="logo" src="../icons/icon128.png" alt="" />
+        <div class="wordmark">Natex demo</div>
       </div>
-      <p>This is a plain Quill editor so you can test the ForTex formula button. The size of the tooltip is flexible for multi-line equations.</p>
+      <p>A plain Quill editor for trying Natex. Click the <b>fx</b> button in the toolbar, write LaTeX, and press Enter to insert it.</p>
 
       <div class="quill">
         <div id="editor"></div>
@@ -46,7 +49,7 @@
     (function () {
       if (!window.Quill) return;
 
-      // Initialize a basic Quill editor with a toolbar so ForTex can attach its formula button
+      // Initialize a basic Quill editor with a toolbar so Natex can attach its formula button
       const toolbarOptions = [
         ['bold', 'italic', 'underline'],
         ['link'],
@@ -62,7 +65,7 @@
     }());
   </script>
 
-  <!-- Load ForTex directly for the public demo (no extension required) -->
+  <!-- Load Natex directly for the public demo (no extension required) -->
   <script src="../quillOverride.js"></script>
 </body>
 </html>

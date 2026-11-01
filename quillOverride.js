@@ -1,14 +1,20 @@
+// Wrapped so injecting twice (registered script + popup's "Enable") doesn't
+// throw "Identifier 'TOOLTIP_OFFSET' has already been declared".
+(() => {
+if (window.__NATEX_LOADED__) return;
+window.__NATEX_LOADED__ = true;
+
 // set the tooltip offset from the button
 const TOOLTIP_OFFSET = 8;
 
 // basic debug logging to verify the content script is active
 try {
-  console.log('[ForTex] content script loaded on', window.location.href);
+  console.log('[Natex] content script loaded on', window.location.href);
 } catch (_) {}
 
 if (typeof window !== 'undefined' && window.__FORTEX_INITIALIZED__) {
   try {
-    console.log('[ForTex] already initialized on', window.location.href);
+    console.log('[Natex] already initialized on', window.location.href);
   } catch (_) {}
 } else if (typeof window !== 'undefined') {
   window.__FORTEX_INITIALIZED__ = true;
@@ -121,7 +127,7 @@ function addFormulaBtnToToolbar(toolbar) {
           ta = document.createElement('textarea');
           ta.setAttribute('data-formula-editor', '');
           ta.setAttribute('rows', '2');
-          ta.placeholder = 'e=mc^2';
+          ta.placeholder = '\\frac{\\pi^2}{6}  — try it';
           ta.style.display = 'block';
           ta.style.width = '100%';
           ta.value = input.value || '';
@@ -206,7 +212,7 @@ function addFormulaBtnToToolbar(toolbar) {
   }
 
   try {
-    console.log('[ForTex] formula button initialized for a toolbar on', window.location.href);
+    console.log('[Natex] formula button initialized for a toolbar on', window.location.href);
   } catch (_) {}
 
   // Ensure the Quill link button switches the shared tooltip to link mode
@@ -473,59 +479,104 @@ function ensureTooltipStyles() {
   const style = document.createElement('style');
   style.id = 'quill-tooltip-mode-styles';
   style.textContent = `
-    /* Formula mode (styling applied to default Quill tooltip when in formula mode) */
-    .quill .ql-tooltip[data-mode="formula"] {
+    /* ── Natex editor look (v2 Cobalt) applied to Quill's tooltip in formula mode ── */
+    .quill .ql-tooltip[data-mode="formula"], .ql-container .ql-tooltip[data-mode="formula"] {
       box-sizing: border-box;
-      padding: 8px;
-      background: #fff;
-      color: #111;
-      border: 1px solid rgba(0,0,0,.08);
-      box-shadow: 0 4px 16px rgba(0,0,0,.08);
-      border-radius: 8px;
-      z-index: 1000;
+      padding: 0;
+      background: #1C1D20;
+      color: #ECEDEF;
+      border: 1px solid #4F70F7;
+      box-shadow: 0 0 0 3px rgba(79,112,247,.18), 0 16px 40px rgba(0,0,0,.35);
+      border-radius: 6px;
+      z-index: 2147483000;
       width: auto;
-      min-width: 360px; /* original Quill tooltip width */
+      min-width: 420px;
       max-width: 800px;
-      min-height: 80px; /* original Quill tooltip height */
-      max-height: 50vh;
-      overflow: auto; /* scrolling container for sticky buttons */
-      resize: both; /* Container resizable */
+      min-height: 120px;
+      max-height: 60vh;
+      overflow: auto;
+      resize: both;
       cursor: default;
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      animation: natexIn .18s cubic-bezier(.2,.8,.2,1);
     }
-    .quill .ql-tooltip[data-mode="formula"]:not(.ql-hidden) {
+    @keyframes natexIn { from { opacity: 0; transform: translateY(-4px) scale(.985); } to { opacity: 1; transform: none; } }
+    .ql-tooltip[data-mode="formula"]:not(.ql-hidden) {
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 0;
     }
-    .quill .ql-tooltip[data-mode="formula"] textarea[data-formula-editor] {
+    /* "Enter formula:" label → Natex header */
+    .ql-tooltip[data-mode="formula"]::before {
+      content: "Natex  ·  write LaTeX" !important;
+      display: block;
+      padding: 10px 14px;
+      margin: 0 !important;
+      line-height: 18px !important;
+      font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+      color: #9A9FA8;
+      border-bottom: 1px solid #33363B;
+      cursor: move;
+    }
+    .ql-tooltip[data-mode="formula"] textarea[data-formula-editor] {
       width: 100%;
       box-sizing: border-box;
       flex: 1 1 auto;
-      min-height: 48px; /* below container min-height to avoid forcing larger container */
-      resize: none; /* Textarea follows container, does not extend individually */
-      padding: 6px 12px; /* extra left/right padding for comfort */
+      min-height: 72px;
+      resize: none;
+      margin: 0;
+      padding: 12px 16px;
       height: auto;
       max-height: 100%;
       max-width: 100%;
       min-width: 0;
+      border: 0;
+      outline: 0;
+      background: transparent;
+      color: #7F98FF;
+      caret-color: #4F70F7;
+      font: 13px/24px "JetBrains Mono", "Cascadia Code", ui-monospace, Consolas, monospace;
       cursor: text;
     }
-    /* Hide the formula editor textarea in non-formula modes even if still present in the DOM */
-    .quill .ql-tooltip:not([data-mode="formula"]) textarea[data-formula-editor] {
+    .ql-tooltip[data-mode="formula"] textarea[data-formula-editor]::placeholder { color: #5d626b; }
+    .ql-tooltip:not([data-mode="formula"]) textarea[data-formula-editor] {
       display: none !important;
     }
-    /* Keep action buttons visible (not covered/hidden) while moving/resizing/scrolling */
-    .quill .ql-tooltip[data-mode="formula"] .ql-action,
-    .quill .ql-tooltip[data-mode="formula"] .ql-cancel {
+    /* Footer: hint on the left, Insert / Cancel on the right */
+    .ql-tooltip[data-mode="formula"] .ql-action,
+    .ql-tooltip[data-mode="formula"] .ql-cancel {
       position: sticky;
       bottom: 0;
-      display: inline-block;
-      background: #fff;
       z-index: 2;
-      margin-top: 4px;
+      display: inline-block;
+      margin: 0 !important;
+      border: 0 !important;
+      text-decoration: none !important;
     }
-    .quill .ql-tooltip[data-mode="formula"] input[data-formula] { display: none; }
-    .quill .ql-tooltip:not([data-mode="formula"]) input[data-formula] { display: inline-block; }
+    .ql-tooltip[data-mode="formula"] .ql-action {
+      align-self: flex-end;
+      margin: 8px 12px 10px !important;
+    }
+    .ql-tooltip[data-mode="formula"] .ql-action::after {
+      content: "Insert" !important;
+      display: inline-block;
+      margin: 0 !important; padding: 6px 16px !important;
+      border: 0 !important; border-radius: 6px;
+      background: #4F70F7; color: #fff !important;
+      font: 600 13px/18px Inter, system-ui, sans-serif;
+      cursor: pointer;
+    }
+    .ql-tooltip[data-mode="formula"] .ql-action:hover::after { filter: brightness(1.08); }
+    .ql-tooltip[data-mode="formula"] .ql-action::before {
+      content: "Enter insert  ·  Shift+Enter new line";
+      position: absolute; right: calc(100% + 12px); top: 50%; transform: translateY(-50%);
+      white-space: nowrap; font: 12px Inter, system-ui, sans-serif; color: #9A9FA8;
+      padding: 0; margin: 0; border: 0;
+    }
+    .ql-tooltip[data-mode="formula"] .ql-action { position: relative; border-top: 0 !important; }
+    .ql-tooltip[data-mode="formula"] .ql-cancel { display: none !important; }
+    .ql-tooltip[data-mode="formula"] input[data-formula] { display: none !important; }
+    .ql-tooltip:not([data-mode="formula"]) input[data-formula] { display: inline-block; }
 
     /* Link mode: use Quill's native styling (no overrides) */
 
@@ -544,7 +595,7 @@ function scanAndEnhanceToolbars() {
   // so this works with slightly different DOM structures.
   document.querySelectorAll('.ql-toolbar, #toolbar').forEach((toolbar) => {
     try {
-      console.log('[ForTex] detected toolbar element for enhancement on', window.location.href);
+      console.log('[Natex] detected toolbar element for enhancement on', window.location.href);
     } catch (_) {}
     addFormulaBtnToToolbar(toolbar);
   });
@@ -564,3 +615,4 @@ if (typeof window !== 'undefined' && window.__FORTEX_SIDE_EFFECTS_DONE__) {
   });
   observer.observe(document.body, { childList: true, subtree: true });
 }
+})();

@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Natex</title>
+  <link rel="stylesheet" href="styles/popup.css" />
+</head>
+<body>
+  <main class="popup">
+    <div class="brand">
+      <img class="logo" src="icons/icon128.png" alt="" />
+      <div class="wordmark">Natex</div>
+    </div>
+
+    <div class="hero">
+      <div class="hero-title">Type <code>ff</code>, get a fraction.</div>
+      <div class="hero-sub">LaTeX in any text box on the web — with live preview and your own shortcuts.</div>
+    </div>
+
+    <!-- Site state: exactly one of these is visible (popup.js toggles them) -->
+    <section class="site" id="siteOff" hidden>
+      <div>
+        <div class="eyebrow">On this site</div>
+        <div class="domain" id="domainOff">—</div>
+      </div>
+      <button class="btn-primary" id="enableBtn">Enable Natex here</button>
+    </section>
+    <section class="site site-on" id="siteOn" hidden>
+      <div>
+        <div class="eyebrow">On for this site</div>
+        <div class="domain" id="domainOn">—</div>
+      </div>
+      <button class="switch on" id="siteSwitch" aria-label="Turn Natex off for this site"><i></i></button>
+    </section>
+    <section class="site" id="siteNa" hidden>
+      <div>
+        <div class="eyebrow">On this site</div>
+        <div class="site-note">Natex can't run on this page. Open a forum or assignment page with a text editor, then click the η icon again.</div>
+      </div>
+    </section>
+
+    <section class="how">
+      <div class="eyebrow">How it works</div>
+      <div class="step"><span class="n">1</span><span>Click into a text box.</span></div>
+      <div class="step"><span class="n">2</span><span>Press <span class="keys"><kbd>Ctrl</kbd><kbd>M</kbd></span> or the <b>fx</b> button to open the editor. <a class="link" data-toast="Custom hotkeys are coming soon">Change</a></span></div>
+      <div class="step"><span class="n">3</span><span>Write LaTeX, check the preview, insert.</span></div>
+    </section>
+
+    <nav class="nav">
+      <button class="nav-btn" data-toast="Shortcuts editor is coming soon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4F70F7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M6 9h.01M10 9h.01M14 9h.01M18 9h.01M6 13h.01M18 13h.01M9 15.5h6"/></svg>
+        <span>Shortcuts</span><em>8</em>
+      </button>
+      <button class="nav-btn" id="openSettings">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ECEDEF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+        <span>Settings</span>
+      </button>
+    </nav>
+  </main>
+  <div class="toast" id="toast" role="status"></div>
+  <script src="popup.js"></script>
+</body>
+</html>
