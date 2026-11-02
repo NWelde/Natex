@@ -1,4 +1,4 @@
-// Tuning values from arc/preview-ux.md.
+// Tuning values for the panel.
 
 /** Idle time before errors are shown, so `\f` on the way to `\frac` never flashes red. */
 export const ERROR_DELAY = 600;

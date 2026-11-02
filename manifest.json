@@ -1,6 +1,6 @@
 {
     "name": "Natex",
-    "description": "Write LaTeX in Quill-based text editors, with live preview and your own shortcuts.",
+    "description": "Write LaTeX in Quill-based text editors, with a live preview.",
     "version": "3.0",
     "manifest_version": 3,
     "action": {
