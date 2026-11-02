@@ -14,7 +14,7 @@ import panelCss from './styles.css';
 const TEMPLATE = `
   <div class="panel" role="dialog" aria-label="Natex LaTeX editor">
     <div class="head">
-      <div class="title"><i>𝜂</i> Natex</div>
+      <div class="title">Natex</div>
       <button class="toggle" type="button" data-ref="toggle">Hide preview</button>
     </div>
     <div class="src">
@@ -23,7 +23,7 @@ const TEMPLATE = `
         placeholder="Write text and math:  area is $\\pi r^2$"></textarea>
     </div>
     <div class="pv-wrap">
-      <div class="pv-label">Preview — exactly what will be inserted</div>
+      <div class="pv-label">Preview</div>
       <div class="pv" data-ref="preview"></div>
       <div class="errs" data-ref="errors"></div>
     </div>
