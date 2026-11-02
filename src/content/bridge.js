@@ -1,6 +1,7 @@
 // Isolated-world side of the page bridge (see src/page/quill-bridge.js).
 
 import { REQUEST_EVENT, RESPONSE_EVENT } from '../core/protocol.js';
+import { signal } from './lifecycle.js';
 
 const pending = new Map();
 let nextId = 1;
@@ -13,7 +14,7 @@ document.addEventListener(RESPONSE_EVENT, (event) => {
   pending.delete(msg.id);
   clearTimeout(p.timer);
   msg.ok ? p.resolve(msg.value) : p.reject(new Error(msg.error));
-});
+}, { signal });
 
 /** Calls a page-bridge method. Rejects if the bridge doesn't answer in time. */
 export function call(method, args = {}, timeoutMs = 2000) {

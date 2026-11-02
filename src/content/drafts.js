@@ -3,6 +3,7 @@
 // (localStorage on the dev harness pages, which run without the extension).
 
 import { EDITOR_ID_ATTR } from '../core/protocol.js';
+import { alive } from './lifecycle.js';
 
 const PREFIX = 'natex:draft:';
 const MAX_AGE = 30 * 24 * 60 * 60 * 1000; // older drafts are dropped when read
@@ -40,6 +41,7 @@ export function draftKey(editorId) {
 
 /** @returns {Promise<string>} the saved draft, or '' */
 export async function loadDraft(key) {
+  if (!alive()) return '';
   try {
     const draft = (await area.get(key))[key];
     if (!draft) return '';
@@ -52,10 +54,15 @@ export async function loadDraft(key) {
 }
 
 export function saveDraft(key, text) {
-  const op = text.trim() ? area.set({ [key]: { text, savedAt: Date.now() } }) : area.remove(key);
-  op.catch?.((err) => console.warn('[Natex] could not save draft:', err.message));
+  if (!alive()) return;
+  // chrome.storage throws synchronously when the extension context is gone, and rejects on other failures.
+  try {
+    const op = text.trim() ? area.set({ [key]: { text, savedAt: Date.now() } }) : area.remove(key);
+    op.catch?.((err) => console.warn('[Natex] could not save draft:', err.message));
+  } catch (_) { /* extension reloaded; alive() shuts this instance down next time */ }
 }
 
 export function clearDraft(key) {
-  area.remove(key).catch?.(() => {});
+  if (!alive()) return;
+  try { area.remove(key).catch?.(() => {}); } catch (_) {}
 }

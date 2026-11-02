@@ -63,9 +63,11 @@ const handlers = {
   },
 };
 
-if (!window.__NATEX_PAGE_BRIDGE__) {
-  window.__NATEX_PAGE_BRIDGE__ = true;
-  document.addEventListener(REQUEST_EVENT, (event) => {
+// A re-injected bridge (after an extension update) replaces the old one, so
+// the page always answers with the current code, and only once.
+if (typeof window.__NATEX_PAGE_BRIDGE__ === 'function') window.__NATEX_PAGE_BRIDGE__();
+{
+  const onRequest = (event) => {
     let msg;
     try { msg = JSON.parse(event.detail); } catch { return; }
     let reply;
@@ -77,5 +79,7 @@ if (!window.__NATEX_PAGE_BRIDGE__) {
       reply = { id: msg.id, ok: false, error: String(err?.message || err) };
     }
     document.dispatchEvent(new CustomEvent(RESPONSE_EVENT, { detail: JSON.stringify(reply) }));
-  });
+  };
+  document.addEventListener(REQUEST_EVENT, onRequest);
+  window.__NATEX_PAGE_BRIDGE__ = () => document.removeEventListener(REQUEST_EVENT, onRequest);
 }
