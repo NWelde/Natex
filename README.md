@@ -36,13 +36,17 @@ Natex lets you write LaTeX in Quill-based text editors with a live preview. Type
 
 ## How to install
 
-* Download this repo as a .zip file (or clone it)
-* In the folder, run `npm install && npm run build` (needs Node 18+). This creates `dist/`, which the extension loads.
-* Access `chrome://extensions`, enable Developer Mode and click on "Load Unpacked"
-* Select the unzipped folder.
-* Now, just make sure to pin the extension so it's always available at your extension bar
+1. Open the [latest release](https://github.com/NWelde/Natex/releases/latest) and download **`natex-<version>.zip`** under Assets (the automatically generated "Source code" downloads require building).
+2. Unzip it into a folder you will keep on your computer.
+3. Open `chrome://extensions`, enable **Developer mode**, and click **Load unpacked**.
+4. Select the extracted folder containing `manifest.json`.
+5. Pin Natex from Chrome's extensions menu.
+
+No Node.js, npm, or build commands are needed. Keep the extracted folder: Chrome loads the extension from it.
 
 ## Developing
+
+Clone the repo, then run `npm ci && npm run build` with Node.js 22+. Load the repo folder in `chrome://extensions` using **Load unpacked**.
 
 * `npm test`: unit tests for the parsing, rendering and insert logic (`src/core/`).
 * `npm run watch`: rebuilds `dist/` on every change; reload the extension in `chrome://extensions` afterwards.
@@ -56,6 +60,12 @@ Code layout:
 * `src/core/`: pure logic (parse `$…$`, render with KaTeX, build Quill inserts). No DOM, unit-tested.
 * `src/content/`: the panel UI, injected into pages in a Shadow DOM.
 * `src/page/`: a small bridge that runs in the page itself so it can reach the site's Quill editor.
+
+### Creating a release
+
+Run `npm run package` (requires Python 3) to build `release/natex-<version>.zip`. The ZIP contains the extension's runtime files, bundled scripts, and KaTeX fonts.
+
+To publish, keep the versions in `package.json` (and its lockfile) and `manifest.json` aligned, commit the changes, then push a matching version tag, for example `git tag v3.0.0` followed by `git push origin v3.0.0`. GitHub Actions runs the tests, builds the ZIP, and attaches it to a GitHub Release. The **Package extension** workflow can also be run manually to download a build from its workflow artifacts without publishing a release.
 
 ## Privacy and data:
 * Natex runs only on sites you allow (Quill-based editors).
