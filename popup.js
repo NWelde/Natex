@@ -89,7 +89,9 @@ async function enable() {
   await setAllowedOrigins([...new Set([...allowed, ...needed])]);
 
   try {
-    await chrome.scripting.executeScript({ target: { tabId: tab.id, allFrames: true }, files: ['quillOverride.js'] });
+    const target = { tabId: tab.id, allFrames: true };
+    await chrome.scripting.executeScript({ target, files: ['dist/page.js'], world: 'MAIN' });
+    await chrome.scripting.executeScript({ target, files: ['dist/content.js'] });
   } catch (_) {
     // Restricted frames etc. — background.js will retry on next page load.
   }

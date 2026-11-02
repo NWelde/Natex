@@ -16,10 +16,23 @@ ForTex adds a flexible LaTeX formula button to Quill-based text editors. It was 
 
 ## How to install 
 
-* Download this repo as a .zip file
+* Download this repo as a .zip file (or clone it)
+* In the folder, run `npm install && npm run build` (needs Node 18+). This creates `dist/`, which the extension loads.
 * Access `chrome://extensions` and enable Developer Mode and click on "Load Unpacked:
 * Select the unzipped folder. 
 * Now, just make sure to pin the extension so it's always available at your extension bar
+
+## Developing
+
+* `npm test`: unit tests for the parsing, rendering and insert logic (`src/core/`).
+* `npm run watch`: rebuilds `dist/` on every change; reload the extension in `chrome://extensions` afterwards.
+* `tests/e2e/quill.html`: a plain Quill page that loads the built scripts without installing the extension. Serve the repo root (`python3 -m http.server 5174`) and open `http://127.0.0.1:5174/tests/e2e/quill.html`.
+
+Code layout:
+
+* `src/core/`: pure logic (parse `$…$`, render with KaTeX, build Quill inserts). No DOM, unit-tested.
+* `src/content/`: the panel UI, injected into pages in a Shadow DOM.
+* `src/page/`: a small bridge that runs in the page itself so it can reach the site's Quill editor.
 
 ## We have version 2.0! What's new?
 * Architecture has been updated so ForTex can be more easily adapted to **any** Quill-based text editor.
