@@ -1,0 +1,127 @@
+/* Natex panel. Lives in a shadow root, so host-page CSS can't reach it.
+   Tokens mirror the "v2 — Cobalt" page in Paper and prototype/prototype.css. */
+:host {
+  all: initial;
+  --bg: #1C1D20;
+  --surface: #25272B;
+  --raised: #3A3D43;
+  --line: #33363B;
+  --muted: #9A9FA8;
+  --ink: #ECEDEF;
+  --cobalt: #4F70F7;
+  --math: #7F98FF;
+  --danger: #F47067;
+  --radius: 6px;
+  --display: KaTeX_Main, "Latin Modern Math", Georgia, serif;
+  --ui: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --ease-out: cubic-bezier(.2, .8, .2, 1);
+}
+* { box-sizing: border-box; }
+kbd {
+  font: 600 11px/16px var(--mono); padding: 0 5px; border: 1px solid #44474E; border-bottom-width: 2px;
+  border-radius: 4px; background: #2C2E33; color: var(--ink);
+}
+
+.panel {
+  position: absolute; width: 560px; max-width: calc(100vw - 16px);
+  display: flex; flex-direction: column;
+  background: var(--bg); color: var(--ink); font: 13px/1.4 var(--ui);
+  border: 1px solid var(--cobalt); border-radius: var(--radius);
+  box-shadow: 0 0 0 3px rgba(79,112,247,.18), 0 16px 40px rgba(0,0,0,.35);
+  opacity: 0; transform: translateY(-4px) scale(.985); transform-origin: top left; pointer-events: none;
+  transition: opacity .14s ease, transform .18s var(--ease-out);
+}
+.panel.open { opacity: 1; transform: none; pointer-events: auto; }
+/* In a short frame the panel gets a max-height (panel.js place()); the preview scrolls first, the rest keeps its size. */
+.panel > * { flex-shrink: 0; }
+.panel > .pv-wrap { flex-shrink: 1; min-height: 0; overflow: auto; }
+
+.head { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px 8px 14px; }
+.title { font: 15px var(--display); color: var(--ink); display: flex; align-items: center; gap: 8px; }
+.toggle {
+  border: 1px solid var(--line); background: var(--surface); color: var(--ink); font: 500 12px/16px var(--ui);
+  cursor: pointer; padding: 4px 10px; border-radius: var(--radius); transition: background .12s, border-color .12s;
+}
+.toggle:hover { background: var(--raised); border-color: #44474E; }
+.toggle:active { transform: scale(.98); }
+
+/* Draft restored bar */
+.draft {
+  display: flex; align-items: center; justify-content: space-between; padding: 4px 6px 4px 12px; margin: 0 10px 6px;
+  color: var(--muted); font: 12px var(--ui);
+}
+.draft[hidden] { display: none; }
+.draft button {
+  border: 0; background: none; color: var(--ink); font: 600 12px var(--ui); cursor: pointer;
+  padding: 3px 8px; border-radius: 5px;
+}
+.draft button:hover { background: var(--raised); }
+
+/* Outline on the host formula being edited */
+.mark {
+  position: absolute; pointer-events: none; border-radius: 4px;
+  outline: 2px solid var(--cobalt); background: rgba(79,112,247,.12);
+}
+.mark[hidden] { display: none; }
+
+/* Source: transparent textarea over a highlighted mirror, in a soft well */
+.src { position: relative; margin: 0 10px; border-radius: 8px; background: var(--surface); }
+.hl, textarea {
+  margin: 0; padding: 12px 16px; min-height: 96px; width: 100%;
+  font: 13px/22px var(--mono); white-space: pre-wrap; overflow-wrap: break-word; letter-spacing: 0; tab-size: 2;
+}
+.hl { color: var(--ink); pointer-events: none; }
+.hl .m { color: var(--math); }
+.hl .e { text-decoration: underline wavy var(--danger); text-decoration-skip-ink: none; text-underline-offset: 3px; }
+textarea {
+  position: absolute; inset: 0; resize: none; border: 0; outline: 0; background: transparent;
+  color: transparent; caret-color: var(--cobalt); overflow: hidden;
+}
+textarea::placeholder { color: #5d626b; }
+
+/* Live preview */
+.pv-wrap { padding: 12px 26px 4px; } /* lines the preview up with the source text */
+.panel.no-preview .pv-wrap { display: none; }
+.pv { font: 17px/1.7 var(--display); color: var(--ink); white-space: pre-wrap; min-height: 28px; max-height: 260px; overflow: auto; }
+.pv:empty::before { content: "Nothing to preview yet."; color: var(--muted); font: 13px var(--ui); }
+.pv .disp { display: block; text-align: center; margin: 4px 0; }
+.pv .stale { opacity: .4; filter: saturate(0); }
+.pv .raw { color: var(--danger); font: 13px var(--mono); }
+
+/* Errors */
+.errs { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; }
+.errs:empty { display: none; }
+.errs button {
+  display: flex; gap: 8px; align-items: baseline; text-align: left; cursor: pointer;
+  border: 0; border-radius: 5px; padding: 5px 8px; background: rgba(244,112,103,.08); color: var(--ink); font: 12px var(--ui);
+}
+.errs button b { color: var(--danger); font-weight: 600; }
+.errs button:hover { background: rgba(244,112,103,.15); }
+
+/* Insert-with-errors confirmation */
+.confirm {
+  display: flex; align-items: center; gap: 10px; padding: 8px 12px 8px 16px;
+  margin: 8px 10px 0; border-radius: 8px; background: rgba(244,112,103,.08); font: 12px var(--ui);
+}
+.confirm[hidden] { display: none; }
+.confirm span { flex: 1; }
+.confirm button { border: 0; border-radius: 5px; padding: 4px 10px; cursor: pointer; font: 600 12px var(--ui); }
+.confirm .keep { background: var(--surface); color: var(--ink); }
+.confirm .anyway { background: var(--danger); color: #1C1D20; }
+
+.foot { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px 12px 14px; }
+.hint { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 4px; }
+.insert {
+  border: 0; border-radius: var(--radius); background: var(--cobalt); color: #fff;
+  font: 600 13px/18px var(--ui); padding: 6px 16px; cursor: pointer; transition: filter .15s, transform .1s;
+}
+.insert:hover { filter: brightness(1.08); }
+.insert:active { transform: scale(.98); }
+
+.toast {
+  position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 12px);
+  background: #111214; color: #fff; font: 13px var(--ui); padding: 9px 14px; border-radius: 8px;
+  opacity: 0; pointer-events: none; transition: opacity .2s, transform .25s var(--ease-out);
+}
+.toast.show { opacity: 1; transform: translate(-50%, 0); }

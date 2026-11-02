@@ -1,0 +1,106 @@
+// Content-script entry (isolated world). Finds Quill editors, adds the Natex
+// button to their toolbars, and opens the panel on click or the hotkey (Ctrl+M
+// unless changed in settings), or on a
+// formula when it's clicked.
+
+import { EDITOR_ID_ATTR } from '../core/protocol.js';
+import { Panel } from './panel/panel.js';
+import { editableFormula } from './editor.js';
+import { isHotkey, currentHotkeyText, onHotkeyChange } from './hotkey.js';
+import { alive, signal, onTeardown, takeOver } from './lifecycle.js';
+
+const BUTTON_CLASS = 'ql-natex';
+// Quill's own formula icon, so the button picks up the host's toolbar theme (ql-fill).
+const FORMULA_ICON = `<svg viewBox="0 0 18 18"><path class="ql-fill" d="M11.759,2.482a2.561,2.561,0,0,0-3.53.607A7.656,7.656,0,0,0,6.8,6.2C6.109,9.188,5.275,14.677,4.15,14.927a1.545,1.545,0,0,0-1.3-.933A0.922,0.922,0,0,0,2,15.036S1.954,16,4.119,16s3.091-2.691,3.7-5.553c0.177-.826.36-1.726,0.554-2.6L8.775,6.2c0.381-1.421.807-2.521,1.306-2.676a1.014,1.014,0,0,0,1.02.56A0.966,0.966,0,0,0,11.759,2.482Z"></path><rect class="ql-fill" height="1.6" rx="0.8" ry="0.8" width="5" x="5.15" y="6.2"></rect><path class="ql-fill" d="M13.663,12.027a1.662,1.662,0,0,1,.266-0.276q0.193,0.069.456,0.138a2.1,2.1,0,0,0,.535.069,1.075,1.075,0,0,0,.767-0.3,1.044,1.044,0,0,0,.314-0.8,0.84,0.84,0,0,0-.238-0.619,0.8,0.8,0,0,0-.594-0.239,1.154,1.154,0,0,0-.781.3,4.607,4.607,0,0,0-.781,1q-0.091.15-.218,0.346l-0.246.38c-0.068-.288-0.137-0.582-0.212-0.885-0.459-1.847-2.494-.984-2.941-0.8-0.482.2-.353,0.647-0.094,0.529a0.869,0.869,0,0,1,1.281.585c0.217,0.751.377,1.436,0.527,2.038a5.688,5.688,0,0,1-.362.467,2.69,2.69,0,0,1-.264.271q-0.221-.08-0.471-0.147a2.029,2.029,0,0,0-.522-0.066,1.079,1.079,0,0,0-.768.3A1.058,1.058,0,0,0,9,15.131a0.82,0.82,0,0,0,.832.852,1.134,1.134,0,0,0,.787-0.3,5.11,5.11,0,0,0,.776-0.993q0.141-.219.215-0.34c0.046-.076.122-0.194,0.223-0.346a2.786,2.786,0,0,0,.918,1.726,2.582,2.582,0,0,0,2.376-.185c0.317-.181.212-0.565,0-0.494A0.807,0.807,0,0,1,14.176,15a5.159,5.159,0,0,1-.913-2.446l0,0Q13.487,12.24,13.663,12.027Z"></path></svg>`;
+let panel = null;
+const buttonTitle = () => `Natex: write LaTeX with preview (${currentHotkeyText()})`;
+let nextEditor = 1;
+
+const getPanel = () => (panel ??= new Panel());
+
+/** Gives every Quill container an id both worlds can use to find it. */
+function tagEditor(container) {
+  if (!container.hasAttribute(EDITOR_ID_ATTR)) {
+    // An earlier instance (before an extension update) may have tagged other editors already.
+    while (document.querySelector(`[${EDITOR_ID_ATTR}="nx${nextEditor}"]`)) nextEditor++;
+    container.setAttribute(EDITOR_ID_ATTR, `nx${nextEditor++}`);
+  }
+  return container.getAttribute(EDITOR_ID_ATTR);
+}
+
+/** The Quill container a toolbar controls: usually its next sibling. */
+function containerForToolbar(toolbar) {
+  const sib = toolbar.nextElementSibling;
+  if (sib?.classList.contains('ql-container')) return sib;
+  return toolbar.parentElement?.querySelector('.ql-container') ?? null;
+}
+
+function addButton(toolbar) {
+  if (toolbar.querySelector(`button.${BUTTON_CLASS}`)) return;
+  const container = containerForToolbar(toolbar);
+  if (!container) return;
+  const editorId = tagEditor(container);
+
+  const group = document.createElement('span');
+  group.className = 'ql-formats';
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = BUTTON_CLASS;
+  button.title = buttonTitle();
+  button.setAttribute('aria-label', 'Natex LaTeX editor');
+  button.innerHTML = FORMULA_ICON;
+  // Natex replaces Quill's single-formula tooltip; hide the native button so there's one 𝑓ₓ.
+  toolbar.querySelectorAll('button.ql-formula').forEach((b) => { b.style.display = 'none'; });
+  // mousedown keeps focus (and the caret) in the editor until we've read it.
+  button.addEventListener('mousedown', (e) => e.preventDefault());
+  button.addEventListener('click', (e) => {
+    e.preventDefault();
+    if (alive()) getPanel().open(editorId);
+  });
+  group.appendChild(button);
+  toolbar.appendChild(group);
+}
+
+function scan(root = document) {
+  root.querySelectorAll('.ql-toolbar').forEach(addButton);
+  root.querySelectorAll('.ql-container').forEach(tagEditor);
+}
+
+function removeButtons() {
+  document.querySelectorAll(`button.${BUTTON_CLASS}`).forEach((b) => {
+    const group = b.closest('.ql-formats');
+    (group?.childElementCount === 1 ? group : b).remove();
+  });
+  document.querySelectorAll('.ql-toolbar button.ql-formula').forEach((b) => { b.style.display = ''; });
+}
+
+// Replaces any earlier instance in this frame (e.g. from before the extension was updated).
+takeOver();
+removeButtons(); // left behind by an instance too old to clean up after itself
+onTeardown(() => { removeButtons(); panel?.destroy(); });
+
+scan();
+const observer = new MutationObserver(() => { if (alive()) scan(); });
+observer.observe(document.documentElement, { childList: true, subtree: true });
+onTeardown(() => observer.disconnect());
+
+onHotkeyChange(() => {
+  document.querySelectorAll(`button.${BUTTON_CLASS}`).forEach((b) => { b.title = buttonTitle(); });
+});
+
+// The hotkey in a focused Quill editor opens the panel.
+document.addEventListener('keydown', (e) => {
+  if (!isHotkey(e)) return;
+  const container = document.activeElement?.closest?.('.ql-container');
+  if (!container || !alive()) return;
+  e.preventDefault();
+  e.stopPropagation();
+  getPanel().open(tagEditor(container));
+}, { capture: true, signal });
+
+// Clicking a formula in an editor opens it in the panel for editing.
+document.addEventListener('click', (e) => {
+  const formula = editableFormula(e.composedPath());
+  if (!formula || !alive()) return;
+  getPanel().editFormula(tagEditor(formula.closest('.ql-container')), formula);
+}, { capture: true, signal });

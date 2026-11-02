@@ -1,11 +1,13 @@
+// Natex popup: shows whether Natex is on for the current tab's site and lets
+// the user turn it on/off. Bundled to dist/popup.js (see build.mjs).
+
+import { HOTKEY_KEY, toHotkey, hotkeyLabels } from './src/core/hotkey.js';
+
+const $ = (sel) => document.querySelector(sel);
+
 async function getActiveTab() {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   return tab;
-}
-
-function toOriginPattern(urlString) {
-  const url = new URL(urlString);
-  return `${url.origin}/*`;
 }
 
 async function getAllowedOrigins() {
@@ -17,84 +19,117 @@ async function setAllowedOrigins(allowedOrigins) {
   await chrome.storage.sync.set({ allowedOrigins });
 }
 
-function setStatus(msg) {
-  const el = document.getElementById('site-status');
-  if (el) el.textContent = msg;
-}
-
-async function refreshStatus() {
+// Returns { host, pattern } for http(s) tabs, or null for chrome://, new tab, etc.
+function siteOf(tab) {
   try {
-    const tab = await getActiveTab();
-    if (!tab || !tab.url) {
-      setStatus('Open a tab to enable ForTex.');
-      return;
-    }
-
-    const originPattern = toOriginPattern(tab.url);
-    const allowed = await getAllowedOrigins();
-    const hasPermission = await chrome.permissions.contains({ origins: [originPattern] });
-
-    if (allowed.includes(originPattern) && hasPermission) {
-      setStatus(`Enabled on: ${originPattern}`);
-    } else {
-      setStatus('Not enabled on this site yet.');
-    }
-  } catch (e) {
-    setStatus(e && e.message ? e.message : String(e));
-  }
-}
-
-async function enableOnThisSite() {
-  const tab = await getActiveTab();
-  if (!tab || !tab.url || !tab.id) {
-    setStatus('Open a normal webpage tab first.');
-    return;
-  }
-
-  let originPattern;
-  try {
-    originPattern = toOriginPattern(tab.url);
+    const url = new URL(tab.url);
+    if (url.protocol !== 'https:' && url.protocol !== 'http:') return null;
+    return { host: url.host, pattern: `${url.origin}/*` };
   } catch {
-    setStatus('This page cannot be enabled.');
-    return;
+    return null;
   }
+}
 
-  setStatus(`Requesting permission for ${originPattern} ...`);
+// Origins of iframes on the page (the editor often lives in one). Collected
+// when the popup opens so the permission request can happen right on click.
+let framePatterns = [];
 
-  const granted = await chrome.permissions.request({ origins: [originPattern] });
-  if (!granted) {
-    setStatus('Permission request was canceled.');
-    return;
+async function findFramePatterns(tab) {
+  try {
+    const [res] = await chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      func: () => [...document.querySelectorAll('iframe')].map((f) => {
+        try { return new URL(f.src, location.href).origin; } catch { return null; }
+      }),
+    });
+    return [...new Set((res?.result || [])
+      .filter((o) => o && /^https?:/.test(o))
+      .map((o) => `${o}/*`))];
+  } catch (_) {
+    return [];
   }
+}
+
+let toastTimer;
+function toast(msg) {
+  const t = $('#toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+function showState(state, host) {
+  $('#siteOff').hidden = state !== 'off';
+  $('#siteOn').hidden = state !== 'on';
+  $('#siteNa').hidden = state !== 'na';
+  if (host) $('#domainOff').textContent = $('#domainOn').textContent = host;
+}
+
+async function refresh() {
+  const tab = await getActiveTab();
+  const site = tab && siteOf(tab);
+  if (!site) return showState('na');
+  framePatterns = (await findFramePatterns(tab)).filter((p) => p !== site.pattern);
+  const needed = [site.pattern, ...framePatterns];
+  const allowed = await getAllowedOrigins();
+  const granted = await chrome.permissions.contains({ origins: needed });
+  showState(needed.every((p) => allowed.includes(p)) && granted ? 'on' : 'off', site.host);
+}
+
+async function enable() {
+  const tab = await getActiveTab();
+  const site = tab && siteOf(tab);
+  if (!site) return;
+
+  // Ask for the page and any embedded editor frames in one prompt.
+  const needed = [site.pattern, ...framePatterns];
+  const granted = await chrome.permissions.request({ origins: needed });
+  if (!granted) return toast('Permission was not granted');
 
   const allowed = await getAllowedOrigins();
-  if (!allowed.includes(originPattern)) {
-    allowed.push(originPattern);
-    await setAllowedOrigins(allowed);
-  }
+  await setAllowedOrigins([...new Set([...allowed, ...needed])]);
 
   try {
-    await chrome.scripting.executeScript({
-      target: { tabId: tab.id, allFrames: true },
-      files: ['quillOverride.js'],
-    });
+    const target = { tabId: tab.id, allFrames: true };
+    await chrome.scripting.executeScript({ target, files: ['dist/page.js'], world: 'MAIN' });
+    await chrome.scripting.executeScript({ target, files: ['dist/content.js'] });
   } catch (_) {
-    // ignore
+    // Restricted frames etc. — background.js will retry on next page load.
   }
-
-  await refreshStatus();
+  await refresh();
+  toast(`Natex is on for ${site.host}`);
 }
 
-function openSettings() {
-  chrome.runtime.openOptionsPage();
+async function disable() {
+  const tab = await getActiveTab();
+  const site = tab && siteOf(tab);
+  if (!site) return;
+  const drop = [site.pattern, ...framePatterns];
+  await setAllowedOrigins((await getAllowedOrigins()).filter((p) => !drop.includes(p)));
+  try { await chrome.permissions.remove({ origins: drop }); } catch (_) {}
+  await refresh();
+  toast('Natex is off — reload the page to remove it');
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  const enableBtn = document.getElementById('enable-site');
-  const settingsBtn = document.getElementById('open-settings');
-
-  if (enableBtn) enableBtn.addEventListener('click', () => enableOnThisSite());
-  if (settingsBtn) settingsBtn.addEventListener('click', () => openSettings());
-
-  refreshStatus();
+document.addEventListener('click', (e) => {
+  const el = e.target.closest('[data-toast]');
+  if (el) { e.preventDefault(); toast(el.dataset.toast); }
 });
+$('#enableBtn').addEventListener('click', enable);
+$('#siteSwitch').addEventListener('click', disable);
+$('#openSettings').addEventListener('click', () => chrome.runtime.openOptionsPage());
+$('#changeHotkey').addEventListener('click', (e) => { e.preventDefault(); chrome.runtime.openOptionsPage(); });
+
+async function showHotkey() {
+  const items = await chrome.storage.sync.get(HOTKEY_KEY);
+  const mac = /Mac|iPhone|iPad/.test(navigator.platform);
+  $('#hotkeyKeys').replaceChildren(...hotkeyLabels(toHotkey(items[HOTKEY_KEY]), mac).map((k) => {
+    const kbd = document.createElement('kbd');
+    kbd.textContent = k;
+    return kbd;
+  }));
+}
+
+refresh();
+showHotkey();

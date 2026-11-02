@@ -1,40 +1,44 @@
 <!doctype html>
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <title>ForTex Settings</title>
-    <link rel="icon" href="fortex-icon.png" type="image/png" />
-    <link rel="apple-touch-icon" href="fortex-icon.png" />
-    <link rel="stylesheet" href="styles/options.css" />
-  </head>
-  <body>
-    <div class="page">
-      <div class="card">
-        <div class="header">
-          <img class="logo" src="fortex-icon.png" alt="ForTex" />
-          <h1>ForTex Settings</h1>
-        </div>
-
-        <p>
-          Add the websites where you want ForTex to run. Chrome will prompt you to grant access once per site so ForTex can modify Quill editor pages and add the LaTeX button. This list is saved locally in Chrome and is never transmitted or shared.
-        </p>
-
-        <div class="row">
-          <input id="domain" placeholder="example.com" autocomplete="off" />
-          <button id="add">Add site</button>
-        </div>
-
-        <p id="status"></p>
-
-        <h2>Allowed sites</h2>
-        <ul id="list"></ul>
-
-        <p>
-          Tip: enter a domain like <code>canvas.instructure.com</code> or <code>your-school.edu</code>.
-        </p>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Natex Settings</title>
+  <link rel="icon" href="icons/icon32.png" type="image/png" />
+  <link rel="stylesheet" href="styles/options.css" />
+</head>
+<body>
+  <main class="page">
+    <header class="page-head">
+      <div class="brand">
+        <img class="logo" src="icons/icon128.png" alt="" />
+        <div class="wordmark">Natex settings</div>
       </div>
-    </div>
+      <p>Choose where Natex runs and how you trigger it. Everything here is stored in Chrome on your device and never sent anywhere.</p>
+    </header>
 
-    <script src="options.js"></script>
-  </body>
+    <section class="section">
+      <h2>Sites</h2>
+      <p>Natex only runs on sites you allow. Chrome will ask for access once per site.</p>
+      <div class="add">
+        <input id="domain" placeholder="canvas.instructure.com" autocomplete="off" />
+        <button class="btn-primary" id="add">Add site</button>
+      </div>
+      <div id="status" role="status"></div>
+      <div class="panel" id="list"></div>
+    </section>
+
+    <section class="section">
+      <h2>Open the editor</h2>
+      <div class="panel">
+        <div class="row hotkey" id="hotkeyRow">
+          <div class="grow">Hotkey<div class="sub" id="hotkeyNote">Opens and closes the Natex editor in any allowed text box</div></div>
+          <span class="keys" id="hotkeyKeys"></span>
+          <button class="btn-ghost" id="hotkeyReset" hidden>Reset</button>
+          <button class="btn-ghost" id="hotkeyChange">Change</button>
+        </div>
+      </div>
+    </section>
+  </main>
+  <script src="dist/options.js"></script>
+</body>
 </html>
