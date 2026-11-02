@@ -7,6 +7,7 @@ import { EDITOR_ID_ATTR } from '../core/protocol.js';
 import { Panel } from './panel/panel.js';
 import { editableFormula } from './editor.js';
 import { isHotkey, currentHotkeyText, onHotkeyChange } from './hotkey.js';
+import { alive, signal, onTeardown, takeOver } from './lifecycle.js';
 
 const BUTTON_CLASS = 'ql-natex';
 // Quill's own formula icon, so the button picks up the host's toolbar theme (ql-fill).
@@ -20,6 +21,8 @@ const getPanel = () => (panel ??= new Panel());
 /** Gives every Quill container an id both worlds can use to find it. */
 function tagEditor(container) {
   if (!container.hasAttribute(EDITOR_ID_ATTR)) {
+    // An earlier instance (before an extension update) may have tagged other editors already.
+    while (document.querySelector(`[${EDITOR_ID_ATTR}="nx${nextEditor}"]`)) nextEditor++;
     container.setAttribute(EDITOR_ID_ATTR, `nx${nextEditor++}`);
   }
   return container.getAttribute(EDITOR_ID_ATTR);
@@ -52,7 +55,7 @@ function addButton(toolbar) {
   button.addEventListener('mousedown', (e) => e.preventDefault());
   button.addEventListener('click', (e) => {
     e.preventDefault();
-    getPanel().open(editorId);
+    if (alive()) getPanel().open(editorId);
   });
   group.appendChild(button);
   toolbar.appendChild(group);
@@ -63,29 +66,41 @@ function scan(root = document) {
   root.querySelectorAll('.ql-container').forEach(tagEditor);
 }
 
-if (!window.__NATEX_CONTENT__) {
-  window.__NATEX_CONTENT__ = true;
-  scan();
-  new MutationObserver(() => scan()).observe(document.documentElement, { childList: true, subtree: true });
-
-  onHotkeyChange(() => {
-    document.querySelectorAll(`button.${BUTTON_CLASS}`).forEach((b) => { b.title = buttonTitle(); });
+function removeButtons() {
+  document.querySelectorAll(`button.${BUTTON_CLASS}`).forEach((b) => {
+    const group = b.closest('.ql-formats');
+    (group?.childElementCount === 1 ? group : b).remove();
   });
-
-  // The hotkey in a focused Quill editor opens the panel.
-  document.addEventListener('keydown', (e) => {
-    if (!isHotkey(e)) return;
-    const container = document.activeElement?.closest?.('.ql-container');
-    if (!container) return;
-    e.preventDefault();
-    e.stopPropagation();
-    getPanel().open(tagEditor(container));
-  }, true);
-
-  // Clicking a formula in an editor opens it in the panel for editing.
-  document.addEventListener('click', (e) => {
-    const formula = editableFormula(e.composedPath());
-    if (!formula) return;
-    getPanel().editFormula(tagEditor(formula.closest('.ql-container')), formula);
-  }, true);
+  document.querySelectorAll('.ql-toolbar button.ql-formula').forEach((b) => { b.style.display = ''; });
 }
+
+// Replaces any earlier instance in this frame (e.g. from before the extension was updated).
+takeOver();
+removeButtons(); // left behind by an instance too old to clean up after itself
+onTeardown(() => { removeButtons(); panel?.destroy(); });
+
+scan();
+const observer = new MutationObserver(() => { if (alive()) scan(); });
+observer.observe(document.documentElement, { childList: true, subtree: true });
+onTeardown(() => observer.disconnect());
+
+onHotkeyChange(() => {
+  document.querySelectorAll(`button.${BUTTON_CLASS}`).forEach((b) => { b.title = buttonTitle(); });
+});
+
+// The hotkey in a focused Quill editor opens the panel.
+document.addEventListener('keydown', (e) => {
+  if (!isHotkey(e)) return;
+  const container = document.activeElement?.closest?.('.ql-container');
+  if (!container || !alive()) return;
+  e.preventDefault();
+  e.stopPropagation();
+  getPanel().open(tagEditor(container));
+}, { capture: true, signal });
+
+// Clicking a formula in an editor opens it in the panel for editing.
+document.addEventListener('click', (e) => {
+  const formula = editableFormula(e.composedPath());
+  if (!formula || !alive()) return;
+  getPanel().editFormula(tagEditor(formula.closest('.ql-container')), formula);
+}, { capture: true, signal });

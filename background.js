@@ -39,7 +39,7 @@ async function syncContentScripts() {
   // isn't registered (e.g. after upgrading from the old single script) fails
   // the whole call.
   try { await chrome.scripting.unregisterContentScripts(); } catch (_) {}
-  if (!granted.length) return;
+  if (!granted.length) return granted;
   const common = {
     matches: granted,
     allFrames: true,
@@ -51,6 +51,27 @@ async function syncContentScripts() {
     { ...common, id: 'natex-page', js: ['dist/page.js'], world: 'MAIN' },
     { ...common, id: 'natex', js: ['dist/content.js'] },
   ]);
+  return granted;
+}
+
+// Registered scripts only run on pages loaded from now on. After an install or
+// update (including a reload in chrome://extensions), tabs that are already
+// open still hold the old content script, which can no longer talk to the
+// extension. Inject the new one there; it replaces the old one (see
+// src/content/lifecycle.js).
+async function injectIntoOpenTabs(patterns) {
+  if (!patterns?.length) return;
+  const tabs = await chrome.tabs.query({ url: patterns });
+  await Promise.all(tabs.map(async (tab) => {
+    if (tab.discarded) return;
+    const target = { tabId: tab.id, allFrames: true };
+    try {
+      await chrome.scripting.executeScript({ target, files: ['dist/page.js'], world: 'MAIN' });
+      await chrome.scripting.executeScript({ target, files: ['dist/content.js'] });
+    } catch (_) {
+      // Tab closed, still loading, or an error page: it gets the scripts on its next load.
+    }
+  }));
 }
 
 // Several of these events fire together (e.g. enabling a site changes both
@@ -62,7 +83,7 @@ function queueSync() {
   return syncing;
 }
 
-chrome.runtime.onInstalled.addListener(queueSync);
+chrome.runtime.onInstalled.addListener(() => queueSync().then(injectIntoOpenTabs));
 chrome.runtime.onStartup.addListener(queueSync);
 chrome.permissions.onAdded.addListener(queueSync);
 chrome.permissions.onRemoved.addListener(queueSync);

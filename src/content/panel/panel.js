@@ -9,6 +9,7 @@ import { formulaSource } from '../../core/render.js';
 import { captureTarget, captureFormula, editableFormula, insertSegments, refocus as refocusEditor } from '../editor.js';
 import { draftKey, loadDraft, saveDraft, clearDraft } from '../drafts.js';
 import { isHotkey } from '../hotkey.js';
+import { alive, signal } from '../lifecycle.js';
 import { katexShadowCss, injectKatexFonts } from '../katex-assets.js';
 import { renderSource } from './source.js';
 import { previewHtml, renderErrors } from './preview.js';
@@ -127,6 +128,13 @@ export class Panel {
       this.el.source.focus();
       this.el.source.setSelectionRange(text.length, text.length);
     });
+  }
+
+  /** Removes the panel for good (this content-script instance is shutting down). */
+  destroy() {
+    clearTimeout(this.errorTimer);
+    clearTimeout(this.toastTimer);
+    this.host.remove();
   }
 
   close({ refocus = true, quiet = false } = {}) {
@@ -267,7 +275,7 @@ export class Panel {
     source.addEventListener('input', () => {
       if (this.confirming) this.hideConfirm();
       draftBar.hidden = true;
-      if (this.draftKey) saveDraft(this.draftKey, source.value);
+      if (this.draftKey && alive()) saveDraft(this.draftKey, source.value);
       this.refresh();
     });
 
@@ -312,8 +320,8 @@ export class Panel {
       // The Natex button and host formulas are handled by their own click handlers (src/content/index.js).
       if (path.includes(this.host) || path.some((n) => n.classList?.contains?.('ql-natex')) || editableFormula(path)) return;
       this.close({ refocus: false });
-    }, true);
+    }, { capture: true, signal });
 
-    window.addEventListener('resize', () => this.isOpen && this.close({ refocus: false }));
+    window.addEventListener('resize', () => this.isOpen && this.close({ refocus: false }), { signal });
   }
 }

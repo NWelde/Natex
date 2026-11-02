@@ -12,7 +12,7 @@ export const katexShadowCss = katexCss.replace(FONT_FACE, '');
 
 /** Adds KaTeX's @font-face rules to the page once, pointing at bundled fonts. */
 export function injectKatexFonts() {
-  if (fontsInjected) return;
+  if (fontsInjected || !globalThis.chrome?.runtime?.getURL) return;
   fontsInjected = true;
   const base = chrome.runtime.getURL('dist/katex/');
   const faces = (katexCss.match(FONT_FACE) || [])
