@@ -145,7 +145,6 @@ export class Panel {
     this.lastGood = [];
     this.hideConfirm();
     this.close({ refocus: false }); // the editor already put the caret after the insert
-    this.toast('Inserted — keep typing');
   }
 
   showConfirm(n) {
