@@ -53,12 +53,21 @@ async function syncContentScripts() {
   ]);
 }
 
-chrome.runtime.onInstalled.addListener(syncContentScripts);
-chrome.runtime.onStartup.addListener(syncContentScripts);
-chrome.permissions.onAdded.addListener(syncContentScripts);
-chrome.permissions.onRemoved.addListener(syncContentScripts);
+// Several of these events fire together (e.g. enabling a site changes both
+// permissions and storage). Run syncs one at a time, or two overlapping runs
+// both unregister and then both register: "Duplicate script ID".
+let syncing = Promise.resolve();
+function queueSync() {
+  syncing = syncing.then(syncContentScripts).catch((err) => console.warn('[Natex] script sync failed', err));
+  return syncing;
+}
+
+chrome.runtime.onInstalled.addListener(queueSync);
+chrome.runtime.onStartup.addListener(queueSync);
+chrome.permissions.onAdded.addListener(queueSync);
+chrome.permissions.onRemoved.addListener(queueSync);
 chrome.storage.onChanged.addListener((changes) => {
-  if (changes.allowedOrigins) syncContentScripts();
+  if (changes.allowedOrigins) queueSync();
 });
 
 //NOTE: If i were to build a mental model of what this backagroun.js does it is the one running to get t

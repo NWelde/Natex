@@ -5,7 +5,7 @@ import katex from 'katex';
 import { parse } from '../../core/segments.js';
 import { renderAll } from '../../core/render.js';
 import { ERROR_DELAY } from '../../core/constants.js';
-import { call } from '../bridge.js';
+import { captureTarget, insertSegments, refocus as refocusEditor } from '../editor.js';
 import { katexShadowCss, injectKatexFonts } from '../katex-assets.js';
 import { renderSource } from './source.js';
 import { previewHtml, renderErrors } from './preview.js';
@@ -64,9 +64,9 @@ export class Panel {
   /** Opens the panel for a Quill editor, anchored under its caret. */
   async open(editorId) {
     if (this.isOpen && this.target?.editorId === editorId) return;
-    let caret;
+    let target;
     try {
-      caret = await call('getCaret', { editorId });
+      target = await captureTarget(editorId);
     } catch (err) {
       console.warn('[Natex]', err.message);
       this.toast("Natex can't reach this editor");
@@ -79,8 +79,8 @@ export class Panel {
       this.el.source.value = '';
       this.lastGood = [];
     }
-    this.target = { editorId, range: caret.range };
-    this.place(caret.rect);
+    this.target = target;
+    this.place(target.rect);
     this.hideConfirm();
     this.refresh({ showErrorsNow: true });
     this.el.panel.classList.add('open');
@@ -91,9 +91,7 @@ export class Panel {
     if (!this.isOpen) return;
     this.el.panel.classList.remove('open');
     clearTimeout(this.errorTimer);
-    if (refocus && this.target) {
-      call('focus', { editorId: this.target.editorId, index: this.target.range.index }).catch(() => {});
-    }
+    if (refocus && this.target) refocusEditor(this.target);
   }
 
   /** Positions the panel just below the caret, kept inside the viewport. */
@@ -136,9 +134,8 @@ export class Panel {
       this.showConfirm(errors.length);
       return;
     }
-    const { editorId, range } = this.target;
     try {
-      await call('insert', { editorId, range, segments: segs });
+      await insertSegments(this.target, segs);
     } catch (err) {
       console.warn('[Natex]', err.message);
       this.toast("Couldn't insert into this editor");
@@ -147,7 +144,7 @@ export class Panel {
     this.el.source.value = '';
     this.lastGood = [];
     this.hideConfirm();
-    this.close({ refocus: false }); // the bridge already put the caret after the insert
+    this.close({ refocus: false }); // the editor already put the caret after the insert
     this.toast('Inserted — keep typing');
   }
 

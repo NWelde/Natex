@@ -33,3 +33,20 @@ test('no extra newline at line start, and none doubled after display', () => {
 test('empty math is skipped', () => {
   assert.deepEqual(toDeltaOps(parse('a $ $ b')).ops, [{ insert: 'a ' }, { insert: ' b' }]);
 });
+
+import { toClipboard } from '../src/core/insert-plan.js';
+
+test('clipboard: inline content pastes without paragraphs', () => {
+  const { html } = toClipboard(parse('so $x<1$ is \\$5'));
+  assert.equal(html, 'so <span class="ql-formula" data-value="x&lt;1"></span> is $5');
+});
+
+test('clipboard: display math gets a centered paragraph', () => {
+  const { html } = toClipboard(parse('see $$y$$ next'));
+  assert.equal(html,
+    '<p>see </p><p class="ql-align-center"><span class="ql-formula" data-value="\\displaystyle y"></span></p><p>next</p>');
+});
+
+test('clipboard: newlines in text become paragraphs', () => {
+  assert.equal(toClipboard(parse('a\nb')).html, '<p>a</p><p>b</p>');
+});
