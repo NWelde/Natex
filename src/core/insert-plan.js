@@ -42,7 +42,24 @@ export function toDeltaOps(segs, { prevChar = '\n' } = {}) {
   return { ops, length };
 }
 
+/**
+ * When the source is exactly one formula (surrounding whitespace aside), its
+ * formula value; otherwise null. Updating a formula with a single formula swaps
+ * the embed in place, so a display formula keeps its centered line.
+ * @param {import('./segments.js').Segment[]} segs
+ * @returns {string | null}
+ */
+export function singleFormula(segs) {
+  const math = segs.filter((s) => s.kind === 'math');
+  const textOnlySpace = segs.every((s) => s.kind === 'math' || !s.value.trim());
+  if (math.length !== 1 || !textOnlySpace || !math[0].closed || !math[0].tex.trim()) return null;
+  return formulaValue(math[0]);
+}
+
 const escHtml = (s) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+/** Clipboard HTML for one formula embed. */
+export const formulaHtml = (value) => `<span class="ql-formula" data-value="${escHtml(value)}"></span>`;
 
 /**
  * The same content as toDeltaOps, as HTML that Quill's clipboard understands
@@ -70,7 +87,7 @@ export function toClipboard(segs) {
       return;
     }
     if (!seg.tex.trim()) return;
-    const formula = `<span class="ql-formula" data-value="${escHtml(formulaValue(seg))}"></span>`;
+    const formula = formulaHtml(formulaValue(seg));
     text += seg.display ? `\n${seg.tex.trim()}\n` : seg.tex.trim();
     if (!seg.display) { line += formula; return; }
     if (line) endLine();

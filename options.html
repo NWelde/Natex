@@ -28,22 +28,17 @@
     </section>
 
     <section class="section">
-      <h2>Open the editor <span class="soon">Coming soon</span></h2>
+      <h2>Open the editor</h2>
       <div class="panel">
-        <div class="row">
-          <div class="grow">Hotkey<div class="sub">Opens the Natex editor from any allowed text box</div></div>
-          <span class="keys"><kbd>Ctrl</kbd><kbd>M</kbd></span>
-          <button class="btn-ghost" disabled title="Coming soon">Change</button>
+        <div class="row hotkey" id="hotkeyRow">
+          <div class="grow">Hotkey<div class="sub" id="hotkeyNote">Opens and closes the Natex editor in any allowed text box</div></div>
+          <span class="keys" id="hotkeyKeys"></span>
+          <button class="btn-ghost" id="hotkeyReset" hidden>Reset</button>
+          <button class="btn-ghost" id="hotkeyChange">Change</button>
         </div>
       </div>
     </section>
-
-    <section class="section">
-      <h2>Shortcuts <span class="soon">Coming soon</span></h2>
-      <p>Type a trigger inside <code>$…$</code> and it expands. <kbd>Tab</kbd> jumps between the boxes.</p>
-      <div class="panel" id="snippets"></div>
-    </section>
   </main>
-  <script src="options.js"></script>
+  <script src="dist/options.js"></script>
 </body>
 </html>

@@ -7,7 +7,7 @@
 //    pasting HTML, which Quill's clipboard turns into text + formula embeds.
 
 import { EDITOR_ID_ATTR } from '../core/protocol.js';
-import { toClipboard } from '../core/insert-plan.js';
+import { toClipboard, singleFormula, formulaHtml } from '../core/insert-plan.js';
 import { call } from './bridge.js';
 
 const containerOf = (editorId) => document.querySelector(`[${EDITOR_ID_ATTR}="${CSS.escape(editorId)}"]`);
@@ -16,7 +16,7 @@ const rootOf = (editorId) => containerOf(editorId)?.querySelector('.ql-editor') 
 /**
  * Captures where to insert, before focus leaves the editor.
  * @returns {Promise<{ editorId: string, mode: 'bridge' | 'dom', range?: object, domRange?: Range,
- *   rect: { left: number, bottom: number, editorLeft: number } }>}
+ *   rect: { left: number, top: number, bottom: number, editorLeft: number } }>}  (viewport coordinates)
  */
 export async function captureTarget(editorId) {
   try {
@@ -43,20 +43,57 @@ export async function captureTarget(editorId) {
     editorId,
     mode: 'dom',
     domRange,
-    rect: { left: hasCaret ? caret.left : editorRect.left, bottom: hasCaret ? caret.bottom : editorRect.top + 24, editorLeft: editorRect.left },
+    rect: hasCaret
+      ? { left: caret.left, top: caret.top, bottom: caret.bottom, editorLeft: editorRect.left }
+      : { left: editorRect.left, top: editorRect.top, bottom: editorRect.top + 24, editorLeft: editorRect.left },
   };
 }
 
-/** Inserts parsed segments at the captured position; the caret ends up after them. */
+/** The formula embed an event happened on, if it's in an editable Quill editor. */
+export function editableFormula(path) {
+  const node = path.find((n) => n.classList?.contains('ql-formula'));
+  return node?.closest('.ql-editor')?.isContentEditable ? node : null;
+}
+
+/**
+ * Captures a formula embed for editing; same shape as captureTarget, with
+ * `replace: true` and a range covering just the formula.
+ */
+export async function captureFormula(editorId, node) {
+  const root = rootOf(editorId);
+  if (!root || !root.contains(node)) throw new Error('Formula not found');
+  const box = node.getBoundingClientRect();
+  const rect = { left: box.left, top: box.top, bottom: box.bottom, editorLeft: root.getBoundingClientRect().left };
+  try {
+    const range = await formulaRange(editorId, node);
+    return { editorId, mode: 'bridge', range, rect, replace: true, node };
+  } catch (err) {
+    console.debug('[Natex] using DOM fallback:', err.message);
+  }
+  const domRange = document.createRange();
+  domRange.selectNode(node);
+  return { editorId, mode: 'dom', domRange, rect, replace: true, node };
+}
+
+async function formulaRange(editorId, node) {
+  const n = [...rootOf(editorId).querySelectorAll('.ql-formula')].indexOf(node);
+  return (await call('getFormula', { editorId, n }, 600)).range;
+}
+
+/** Inserts parsed segments at the captured position (or over the captured formula); the caret ends up after them. */
 export async function insertSegments(target, segments) {
+  if (target.replace && !target.node.isConnected) throw new Error('The formula is no longer in the editor');
   if (target.mode === 'bridge') {
-    await call('insert', { editorId: target.editorId, range: target.range, segments });
+    if (target.replace) target.range = await formulaRange(target.editorId, target.node); // it may have moved
+    await call('insert', { editorId: target.editorId, range: target.range, segments, replace: !!target.replace });
     return;
   }
   const root = rootOf(target.editorId);
   if (!root) throw new Error('Editor not found');
+  if (target.replace) target.domRange.selectNode(target.node); // re-select it right before pasting over it
   restoreSelection(root, target.domRange);
-  const { html, text } = toClipboard(segments);
+  const single = target.replace ? singleFormula(segments) : null;
+  const { html, text } = single ? { html: formulaHtml(single), text: single } : toClipboard(segments);
   const data = new DataTransfer();
   data.setData('text/html', html);
   data.setData('text/plain', text);
@@ -65,14 +102,21 @@ export async function insertSegments(target, segments) {
   if (!event.defaultPrevented) throw new Error("The editor didn't accept the paste");
 }
 
-/** Puts focus (and the caret) back in the editor. */
+/** Puts focus (and the caret) back in the editor; after the formula when one was being edited, never selecting it. */
 export function refocus(target) {
   if (target.mode === 'bridge') {
-    call('focus', { editorId: target.editorId, index: target.range.index }).catch(() => {});
+    const index = target.range.index + (target.replace ? target.range.length : 0);
+    call('focus', { editorId: target.editorId, index }).catch(() => {});
     return;
   }
   const root = rootOf(target.editorId);
-  if (root) restoreSelection(root, target.domRange);
+  if (!root) return;
+  let range = target.domRange;
+  if (target.replace) {
+    range = document.createRange();
+    if (target.node.isConnected) { range.selectNode(target.node); range.collapse(false); }
+  }
+  restoreSelection(root, range);
 }
 
 function restoreSelection(root, range) {

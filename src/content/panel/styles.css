@@ -33,8 +33,11 @@ kbd {
   transition: opacity .14s ease, transform .18s var(--ease-out);
 }
 .panel.open { opacity: 1; transform: none; pointer-events: auto; }
+/* In a short frame the panel gets a max-height (panel.js place()); the preview scrolls first, the rest keeps its size. */
+.panel > * { flex-shrink: 0; }
+.panel > .pv-wrap { flex-shrink: 1; min-height: 0; overflow: auto; }
 
-.head { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; }
+.head { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px 8px 14px; }
 .title { font: 15px var(--display); color: var(--ink); display: flex; align-items: center; gap: 8px; }
 .toggle {
   border: 1px solid var(--line); background: var(--surface); color: var(--ink); font: 500 12px/16px var(--ui);
@@ -43,8 +46,27 @@ kbd {
 .toggle:hover { background: var(--raised); border-color: #44474E; }
 .toggle:active { transform: scale(.98); }
 
-/* Source: transparent textarea over a highlighted mirror */
-.src { position: relative; border-top: 1px solid var(--line); }
+/* Draft restored bar */
+.draft {
+  display: flex; align-items: center; justify-content: space-between; padding: 4px 6px 4px 12px; margin: 0 10px 6px;
+  color: var(--muted); font: 12px var(--ui);
+}
+.draft[hidden] { display: none; }
+.draft button {
+  border: 0; background: none; color: var(--ink); font: 600 12px var(--ui); cursor: pointer;
+  padding: 3px 8px; border-radius: 5px;
+}
+.draft button:hover { background: var(--raised); }
+
+/* Outline on the host formula being edited */
+.mark {
+  position: absolute; pointer-events: none; border-radius: 4px;
+  outline: 2px solid var(--cobalt); background: rgba(79,112,247,.12);
+}
+.mark[hidden] { display: none; }
+
+/* Source: transparent textarea over a highlighted mirror, in a soft well */
+.src { position: relative; margin: 0 10px; border-radius: 8px; background: var(--surface); }
 .hl, textarea {
   margin: 0; padding: 12px 16px; min-height: 96px; width: 100%;
   font: 13px/22px var(--mono); white-space: pre-wrap; overflow-wrap: break-word; letter-spacing: 0; tab-size: 2;
@@ -59,9 +81,8 @@ textarea {
 textarea::placeholder { color: #5d626b; }
 
 /* Live preview */
-.pv-wrap { border-top: 1px solid var(--line); padding: 10px 16px 14px; }
+.pv-wrap { padding: 12px 26px 4px; } /* lines the preview up with the source text */
 .panel.no-preview .pv-wrap { display: none; }
-.pv-label { font: 600 10.5px var(--ui); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
 .pv { font: 17px/1.7 var(--display); color: var(--ink); white-space: pre-wrap; min-height: 28px; max-height: 260px; overflow: auto; }
 .pv:empty::before { content: "Nothing to preview yet."; color: var(--muted); font: 13px var(--ui); }
 .pv .disp { display: block; text-align: center; margin: 4px 0; }
@@ -81,7 +102,7 @@ textarea::placeholder { color: #5d626b; }
 /* Insert-with-errors confirmation */
 .confirm {
   display: flex; align-items: center; gap: 10px; padding: 8px 12px 8px 16px;
-  border-top: 1px solid var(--line); background: rgba(244,112,103,.08); font: 12px var(--ui);
+  margin: 8px 10px 0; border-radius: 8px; background: rgba(244,112,103,.08); font: 12px var(--ui);
 }
 .confirm[hidden] { display: none; }
 .confirm span { flex: 1; }
@@ -89,7 +110,7 @@ textarea::placeholder { color: #5d626b; }
 .confirm .keep { background: var(--surface); color: var(--ink); }
 .confirm .anyway { background: var(--danger); color: #1C1D20; }
 
-.foot { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px 8px 16px; border-top: 1px solid var(--line); }
+.foot { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px 12px 14px; }
 .hint { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 4px; }
 .insert {
   border: 0; border-radius: var(--radius); background: var(--cobalt); color: #fff;
