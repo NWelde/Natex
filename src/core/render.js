@@ -7,6 +7,14 @@ import { unescapeDollar, trimAfterDisplay, followsDisplay } from './segments.js'
 /** The exact value handed to the host's formula blot (and therefore to KaTeX). */
 export const formulaValue = (seg) => (seg.display ? DISPLAY_PREFIX : '') + seg.tex.trim();
 
+/** The inverse: Natex source for a formula already in the host editor (`$…$`, or `$$…$$` for display). */
+export function formulaSource(value) {
+  const tex = String(value ?? '').trim();
+  return tex.startsWith(DISPLAY_PREFIX.trim())
+    ? `$$${tex.slice(DISPLAY_PREFIX.trim().length).trim()}$$`
+    : `$${tex}$`;
+}
+
 /**
  * @typedef {{ message: string, at: number, length: number }} RenderError
  * @typedef {{ kind: 'text', text: string }

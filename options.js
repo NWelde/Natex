@@ -1,19 +1,11 @@
+// Settings page. Bundled to dist/options.js (see build.mjs).
+
+import { HOTKEY_KEY, DEFAULT_HOTKEY, toHotkey, hotkeyLabels, hotkeyFromEvent, sameHotkey } from './src/core/hotkey.js';
+
 const $ = (sel) => document.querySelector(sel);
 const domainInput = $('#domain');
 const listEl = $('#list');
 const statusEl = $('#status');
-
-// Default shortcuts (display only for now — mirrors prototype/prototype.js).
-const SNIPPETS = [
-  ['ff', '\\frac{a}{b}', 'math'],
-  ['sq', '\\sqrt{x}', 'math'],
-  ['sum', '\\sum_{n=1}^{\\infty}', 'math'],
-  ['lim', '\\lim_{n \\to \\infty}', 'math'],
-  ['pd', '\\frac{\\partial f}{\\partial x}', 'math'],
-  ['td', '^{x}', 'math'],
-  ['sr', '^{2}', 'math'],
-  ['mk', '$ … $', 'text'],
-];
 
 function setStatus(msg, isErr = false) {
   statusEl.textContent = msg;
@@ -70,17 +62,6 @@ async function render() {
   }
 }
 
-function renderSnippets() {
-  const wrap = $('#snippets');
-  for (const [trig, body, ctx] of SNIPPETS) {
-    const row = el('div', 'row');
-    const mid = el('div', 'grow');
-    mid.appendChild(el('div', 'body', body));
-    row.append(el('span', 'trig', trig), mid, el('span', 'ctx', ctx === 'math' ? 'in math' : 'in text'));
-    wrap.appendChild(row);
-  }
-}
-
 async function addSite() {
   let pattern;
   try {
@@ -100,5 +81,79 @@ async function addSite() {
 $('#add').addEventListener('click', addSite);
 domainInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') addSite(); });
 
+/* Hotkey */
+
+const mac = /Mac|iPhone|iPad/.test(navigator.platform);
+const hotkeyEls = { row: $('#hotkeyRow'), keys: $('#hotkeyKeys'), note: $('#hotkeyNote'), change: $('#hotkeyChange'), reset: $('#hotkeyReset') };
+const HOTKEY_NOTE = hotkeyEls.note.textContent;
+let hotkey = DEFAULT_HOTKEY;
+let recording = false;
+
+function showKeys(labels) {
+  hotkeyEls.keys.replaceChildren(...labels.map((k) => el('kbd', null, k)));
+}
+
+function renderHotkey() {
+  showKeys(hotkeyLabels(hotkey, mac));
+  hotkeyEls.reset.hidden = sameHotkey(hotkey, DEFAULT_HOTKEY);
+}
+
+function setNote(text = HOTKEY_NOTE, isErr = false) {
+  hotkeyEls.note.textContent = text;
+  hotkeyEls.note.classList.toggle('err', isErr);
+}
+
+function startRecording() {
+  recording = true;
+  hotkeyEls.row.classList.add('recording');
+  hotkeyEls.change.textContent = 'Cancel';
+  hotkeyEls.keys.replaceChildren(el('span', 'listening', 'Press the new keys…'));
+  setNote('Hold Ctrl, Alt or ⌘ and press a key. Esc cancels.');
+}
+
+function stopRecording() {
+  recording = false;
+  hotkeyEls.row.classList.remove('recording');
+  hotkeyEls.change.textContent = 'Change';
+  renderHotkey();
+}
+
+async function saveHotkey(next) {
+  await chrome.storage.sync.set({ [HOTKEY_KEY]: next });
+  hotkey = next;
+  stopRecording();
+  setNote(`Saved. Open tabs pick it up right away.`);
+}
+
+window.addEventListener('keydown', (e) => {
+  if (!recording) return;
+  e.preventDefault();
+  e.stopPropagation();
+  if (e.key === 'Escape' && !e.ctrlKey && !e.altKey && !e.metaKey) {
+    stopRecording();
+    setNote();
+    return;
+  }
+  const result = hotkeyFromEvent(e);
+  if (!result) {
+    // Only modifiers so far: show them as they're held.
+    showKeys(hotkeyLabels({ code: '', key: '…', ctrl: e.ctrlKey, alt: e.altKey, shift: e.shiftKey, meta: e.metaKey }, mac));
+    return;
+  }
+  if (result.error) { setNote(result.error, true); return; }
+  saveHotkey(result.hotkey);
+}, true);
+
+hotkeyEls.change.addEventListener('click', () => {
+  if (recording) { stopRecording(); setNote(); } else startRecording();
+});
+hotkeyEls.reset.addEventListener('click', () => saveHotkey(DEFAULT_HOTKEY));
+// Losing focus mid-recording (e.g. switching windows) cancels it.
+window.addEventListener('blur', () => { if (recording) { stopRecording(); setNote(); } });
+
+chrome.storage.sync.get(HOTKEY_KEY).then((items) => { hotkey = toHotkey(items[HOTKEY_KEY]); renderHotkey(); });
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === 'sync' && changes[HOTKEY_KEY] && !recording) { hotkey = toHotkey(changes[HOTKEY_KEY].newValue); renderHotkey(); }
+});
+
 render();
-renderSnippets();

@@ -17,6 +17,8 @@ const options = {
   entryPoints: {
     content: 'src/content/index.js', // isolated world: panel UI
     page: 'src/page/quill-bridge.js', // MAIN world: talks to the host's Quill
+    options: 'options.js', // settings page
+    popup: 'popup.js', // toolbar popup
   },
   outdir: 'dist',
   bundle: true,

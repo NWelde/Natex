@@ -50,3 +50,27 @@ test('clipboard: display math gets a centered paragraph', () => {
 test('clipboard: newlines in text become paragraphs', () => {
   assert.equal(toClipboard(parse('a\nb')).html, '<p>a</p><p>b</p>');
 });
+
+import { singleFormula } from '../src/core/insert-plan.js';
+import { formulaSource } from '../src/core/render.js';
+
+test('singleFormula: one formula, whitespace around it allowed', () => {
+  assert.equal(singleFormula(parse(' $x^2$\n')), 'x^2');
+  assert.equal(singleFormula(parse('$$y$$')), '\\displaystyle y');
+});
+
+test('singleFormula: anything else is not a single formula', () => {
+  assert.equal(singleFormula(parse('a $x$')), null);
+  assert.equal(singleFormula(parse('$x$ $y$')), null);
+  assert.equal(singleFormula(parse('$x')), null);
+  assert.equal(singleFormula(parse('$ $')), null);
+  assert.equal(singleFormula(parse('')), null);
+});
+
+test('formulaSource round-trips formula values', () => {
+  assert.equal(formulaSource('x^2'), '$x^2$');
+  assert.equal(formulaSource('\\displaystyle \\frac{a}{b}'), '$$\\frac{a}{b}$$');
+  for (const src of ['$\\pi r^2$', '$$\\sum_i i$$']) {
+    assert.equal(formulaSource(singleFormula(parse(src))), src);
+  }
+});

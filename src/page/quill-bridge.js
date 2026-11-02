@@ -3,7 +3,7 @@
 // requests from src/content/bridge.js.
 
 import { REQUEST_EVENT, RESPONSE_EVENT, EDITOR_ID_ATTR } from '../core/protocol.js';
-import { toDeltaOps } from '../core/insert-plan.js';
+import { toDeltaOps, singleFormula } from '../core/insert-plan.js';
 
 function quillFor(editorId) {
   const container = document.querySelector(`[${EDITOR_ID_ATTR}="${CSS.escape(editorId)}"]`);
@@ -25,11 +25,25 @@ const handlers = {
     return { range, rect: { left: r.left + b.left, top: r.top + b.top, bottom: r.top + b.bottom, editorLeft: r.left, editorRight: r.right } };
   },
 
-  /** Inserts parsed segments as one undo step and puts the caret right after them. */
-  insert({ editorId, range, segments }) {
+  /** Range of the n-th formula embed in the editor (the content script counts them in the DOM). */
+  getFormula({ editorId, n }) {
+    const q = quillFor(editorId);
+    const node = q.root.querySelectorAll('.ql-formula')[n];
+    const blot = node && (q.scroll.find?.(node) ?? window.Quill?.find?.(node) ?? node.__blot?.blot);
+    if (!blot) throw new Error('Formula not found');
+    return { range: { index: q.getIndex(blot), length: 1 } };
+  },
+
+  /**
+   * Inserts parsed segments as one undo step and puts the caret right after them.
+   * With `replace`, the range is a formula being updated: a single formula swaps
+   * the embed in place, so a display formula keeps its line.
+   */
+  insert({ editorId, range, segments, replace = false }) {
     const q = quillFor(editorId);
     const prevChar = range.index > 0 ? q.getText(range.index - 1, 1) : '\n';
-    const { ops, length } = toDeltaOps(segments, { prevChar });
+    const single = replace ? singleFormula(segments) : null;
+    const { ops, length } = single ? { ops: [{ insert: { formula: single } }], length: 1 } : toDeltaOps(segments, { prevChar });
     const delta = [];
     if (range.index) delta.push({ retain: range.index });
     if (range.length) delta.push({ delete: range.length });

@@ -1,5 +1,7 @@
 // Natex popup: shows whether Natex is on for the current tab's site and lets
-// the user turn it on/off. Shortcuts + hotkey changes aren't built yet.
+// the user turn it on/off. Bundled to dist/popup.js (see build.mjs).
+
+import { HOTKEY_KEY, toHotkey, hotkeyLabels } from './src/core/hotkey.js';
 
 const $ = (sel) => document.querySelector(sel);
 
@@ -117,5 +119,17 @@ document.addEventListener('click', (e) => {
 $('#enableBtn').addEventListener('click', enable);
 $('#siteSwitch').addEventListener('click', disable);
 $('#openSettings').addEventListener('click', () => chrome.runtime.openOptionsPage());
+$('#changeHotkey').addEventListener('click', (e) => { e.preventDefault(); chrome.runtime.openOptionsPage(); });
+
+async function showHotkey() {
+  const items = await chrome.storage.sync.get(HOTKEY_KEY);
+  const mac = /Mac|iPhone|iPad/.test(navigator.platform);
+  $('#hotkeyKeys').replaceChildren(...hotkeyLabels(toHotkey(items[HOTKEY_KEY]), mac).map((k) => {
+    const kbd = document.createElement('kbd');
+    kbd.textContent = k;
+    return kbd;
+  }));
+}
 
 refresh();
+showHotkey();
