@@ -1,0 +1,37 @@
+<!doctype html>
+<!-- Dev harness: a plain Quill 1.3 page with Natex's built scripts loaded
+     directly (no extension install). Serve the repo root, e.g.
+     `python3 -m http.server 5174`, then open /tests/e2e/quill.html.
+     Run `npm run build` first. -->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Natex harness</title>
+<link rel="icon" href="data:," />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.snow.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.47/dist/katex.min.css" />
+<style>
+  body { font: 15px system-ui, sans-serif; max-width: 760px; margin: 40px auto; }
+  /* Hostile host CSS: the panel must not be affected by it. */
+  button, textarea, pre, div { letter-spacing: 2px; }
+  textarea { background: hotpink !important; }
+</style>
+</head>
+<body>
+<h1>Reply</h1>
+<div id="editor"></div>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.47/dist/katex.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.min.js"></script>
+<script>
+  window.quill = new Quill('#editor', {
+    theme: 'snow',
+    modules: { formula: true, toolbar: [['bold', 'italic'], ['formula']] },
+  });
+  // Stand-in for chrome.runtime.getURL outside the extension.
+  window.chrome = window.chrome || {};
+  chrome.runtime = chrome.runtime || { getURL: (p) => `/${p}` };
+</script>
+<script src="/dist/page.js"></script>
+<script src="/dist/content.js"></script>
+</body>
+</html>
