@@ -65,7 +65,7 @@ Code layout:
 
 Run `npm run package` (requires Python 3) to build `release/natex-<version>.zip`. The ZIP contains the extension's runtime files, bundled scripts, and KaTeX fonts.
 
-To publish, keep the versions in `package.json` (and its lockfile) and `manifest.json` aligned, commit the changes, then push a matching version tag, for example `git tag v3.0.0` followed by `git push origin v3.0.0`. GitHub Actions runs the tests, builds the ZIP, and attaches it to a GitHub Release. The **Package extension** workflow can also be run manually to download a build from its workflow artifacts without publishing a release.
+To publish, keep the versions in `package.json` (and its lockfile) and `manifest.json` aligned, commit the changes, then push a matching version tag, for example `git tag v1.0.0` followed by `git push origin v1.0.0`. GitHub Actions runs the tests, builds the ZIP, and attaches it to a GitHub Release. The **Package extension** workflow can also be run manually to download a build from its workflow artifacts without publishing a release.
 
 ## Privacy and data:
 * Natex runs only on sites you allow (Quill-based editors).
