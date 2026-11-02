@@ -1,25 +1,25 @@
-# ForTex
+# Natex
 
 If you're regularly typing equations in an external platform and ending up with clunky plain text, this extension is for you!
 
-ForTex adds a flexible LaTeX formula button to Quill-based text editors. It was first developed for Minerva University's classroom platform and now can be adapted to work with any Quill editor so you can easily typeset equations and mathematical expressions.
+Natex lets you write LaTeX in Quill-based text editors with a live preview. Type your math, see it render as you go, and insert it straight into the editor. It was built with Minerva University's classroom and forum editors in mind, but works with any Quill editor.
 
-![Demo GIF](assets/fortex-demo-video.gif)
-
-[Live demo](https://marilevay.github.io/fortex/demo/)
+![Natex demo: writing math with a live preview and inserting it into a Minerva reply box](assets/natex-demo.gif)
 
 ## Key features
-* Add a LaTeX formula button to supported Quill-based text editors
-* Type LaTeX code (similar to Overleaf) and insert rendered formulas directly into the editor
-* Use standard LaTeX syntax for equations, symbols, and expressions
-* Designed to work smoothly with pre-class work and breakout-style editors on Minerva’s classroom platform, but can be adapted to other Quill environments.
+* Open the Natex panel from the **fx** button in the editor toolbar or with a hotkey (`Ctrl+M` by default)
+* Live KaTeX preview as you type, so you see mistakes before you insert
+* Mix text and math (`$…$`) and insert it all at once with `Ctrl+Enter` (one undo step)
+* Click a formula already in the editor to open it in the panel and edit it
+* Drafts are saved automatically, so you don't lose your work if the page reloads
+* Change the hotkey in the extension settings
 
-## How to install 
+## How to install
 
 * Download this repo as a .zip file (or clone it)
 * In the folder, run `npm install && npm run build` (needs Node 18+). This creates `dist/`, which the extension loads.
-* Access `chrome://extensions` and enable Developer Mode and click on "Load Unpacked:
-* Select the unzipped folder. 
+* Access `chrome://extensions`, enable Developer Mode and click on "Load Unpacked"
+* Select the unzipped folder.
 * Now, just make sure to pin the extension so it's always available at your extension bar
 
 ## Developing
@@ -34,14 +34,15 @@ Code layout:
 * `src/content/`: the panel UI, injected into pages in a Shadow DOM.
 * `src/page/`: a small bridge that runs in the page itself so it can reach the site's Quill editor.
 
-## We have version 2.0! What's new?
-* Architecture has been updated so ForTex can be more easily adapted to **any** Quill-based text editor.
-
 ## Privacy and data:
-* ForTex runs only on pages that match the configured URLs (Quill-based editors).
+* Natex runs only on sites you allow (Quill-based editors).
 * It does not send any content to external servers, so LaTeX is processed directly in the page where you are editing.
+* Drafts and settings are stored locally in your browser.
 * No analytics or tracking are included in this extension.
 
-**Disclaimer**: ForTex is an independent project and is not affiliated with or endorsed by Minerva University, Quill, or any learning platform providers.
+## Credits
+Natex is built on top of [ForTex](https://github.com/marilevay/fortex), created by [Marina Levay](https://github.com/marilevay). Thank you for the original extension and the idea behind it!
+
+**Disclaimer**: Natex is an independent project and is not affiliated with or endorsed by Minerva University, Quill, or any learning platform providers.
 
 This project is licensed under the MIT License. See the LICENSE file for details.
