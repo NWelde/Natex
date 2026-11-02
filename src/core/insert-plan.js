@@ -41,3 +41,46 @@ export function toDeltaOps(segs, { prevChar = '\n' } = {}) {
   });
   return { ops, length };
 }
+
+const escHtml = (s) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+/**
+ * The same content as toDeltaOps, as HTML that Quill's clipboard understands
+ * (`.ql-formula[data-value]` becomes a formula embed). Used when the host's
+ * Quill instance isn't reachable, e.g. Quill 2 bundled without a global: we
+ * paste this instead of calling updateContents.
+ * @param {import('./segments.js').Segment[]} segs
+ * @returns {{ html: string, text: string }}
+ */
+export function toClipboard(segs) {
+  const blocks = []; // { html, center }
+  let line = '';
+  let text = '';
+  const endLine = (center = false) => { blocks.push({ html: line, center }); line = ''; };
+
+  segs.forEach((seg, i) => {
+    if (seg.kind === 'text') {
+      let value = unescapeDollar(seg.value);
+      if (followsDisplay(segs, i)) value = trimAfterDisplay(value);
+      text += value;
+      value.split('\n').forEach((part, k) => {
+        if (k > 0) endLine();
+        line += escHtml(part);
+      });
+      return;
+    }
+    if (!seg.tex.trim()) return;
+    const formula = `<span class="ql-formula" data-value="${escHtml(formulaValue(seg))}"></span>`;
+    text += seg.display ? `\n${seg.tex.trim()}\n` : seg.tex.trim();
+    if (!seg.display) { line += formula; return; }
+    if (line) endLine();
+    line = formula;
+    endLine(true);
+  });
+  if (line || !blocks.length) endLine();
+
+  // A single plain line pastes inline (no paragraph break at the caret).
+  if (blocks.length === 1 && !blocks[0].center) return { html: blocks[0].html, text };
+  const html = blocks.map((b) => `<p${b.center ? ' class="ql-align-center"' : ''}>${b.html || '<br>'}</p>`).join('');
+  return { html, text };
+}
