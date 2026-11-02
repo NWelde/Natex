@@ -4,16 +4,21 @@ Thanks for your interest in improving Natex. Pull requests are welcome.
 
 ## Ground rules
 
-- **Open a PR — never push to `main`.** Work on a branch and open a pull request
-  against `main`, even for small fixes, so every change gets a review.
+- **Open a PR — never push to `main`.** `main` is protected; branch protection
+  requires the `test` check (unit tests plus a full build) to pass before a PR
+  can merge.
 - **The full test suite must pass, and the extension must build.** Run both from
   the repo root before opening a PR:
 
   ```bash
-  npm install
+  npm ci
   npm test        # unit tests for src/core (node:test)
   npm run build   # bundles dist/, which the extension loads
   ```
+
+  CI runs the same steps on every push to `main` and on every PR
+  (`.github/workflows/ci.yml`), and also checks that the build produced every
+  file the extension loads.
 
   Tests live under `tests/`. If you change the panel or how Natex talks to the
   host editor, also try it on the harness pages in `tests/e2e/` (see the
@@ -37,8 +42,10 @@ Thanks for your interest in improving Natex. Pull requests are welcome.
 External contributions are welcome and follow the standard fork flow:
 
 - **Fork, branch, and open a PR against `main`.**
-- **Run the checks yourself.** There is no CI on this repo yet, so `npm test`
-  and `npm run build` are the gate: say in the PR that both pass.
+- **CI runs on your PR** on GitHub-hosted runners, with no access to repo
+  secrets. The one required check, `test`, must be green before the PR can
+  merge.
+- **Reproduce it locally** with `npm ci && npm test && npm run build`.
 - **Keep PRs focused.** One change per PR is easier to review and to revert.
 
 ## Support
