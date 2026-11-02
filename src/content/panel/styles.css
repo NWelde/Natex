@@ -1,5 +1,5 @@
 /* Natex panel. Lives in a shadow root, so host-page CSS can't reach it.
-   Tokens mirror the "v2 — Cobalt" page in Paper and prototype/prototype.css. */
+   Tokens match styles/theme.css ("v2 — Cobalt"). */
 :host {
   all: initial;
   --bg: #1C1D20;

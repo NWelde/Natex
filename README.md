@@ -6,6 +6,8 @@ Natex lets you write LaTeX in Quill-based text editors with a live preview. Type
 
 ![Natex demo: writing math with a live preview and inserting it into a Minerva reply box](assets/natex-demo.gif)
 
+[Watch the full demo (MP4)](assets/demo/natex-demo.mp4) · [30-second version](assets/demo/natex-reel.mp4)
+
 ## Key features
 * Open the Natex panel from the **fx** button in the editor toolbar or with a hotkey (`Ctrl+M` by default)
 * Live KaTeX preview as you type, so you see mistakes before you insert
@@ -13,6 +15,24 @@ Natex lets you write LaTeX in Quill-based text editors with a live preview. Type
 * Click a formula already in the editor to open it in the panel and edit it
 * Drafts are saved automatically, so you don't lose your work if the page reloads
 * Change the hotkey in the extension settings
+
+## See it in action
+
+**Live preview, and mistakes caught before you insert**
+
+![Typing LaTeX in the Natex panel: the preview updates live and a typo is underlined with the reason](assets/demo/natex-preview.gif)
+
+**Text, inline math and display math in one go**
+
+![Inserting a sentence with the quadratic formula into the editor with Ctrl+Enter](assets/demo/natex-insert.gif)
+
+**Click a formula to fix it**
+
+![Clicking an inserted formula opens it in Natex; Update replaces it in place](assets/demo/natex-edit-formula.gif)
+
+**Drafts survive closing the panel and reloading the page**
+
+![Closing Natex, reloading the page, and getting the draft back](assets/demo/natex-drafts.gif)
 
 ## How to install
 
@@ -27,6 +47,9 @@ Natex lets you write LaTeX in Quill-based text editors with a live preview. Type
 * `npm test`: unit tests for the parsing, rendering and insert logic (`src/core/`).
 * `npm run watch`: rebuilds `dist/` on every change; reload the extension in `chrome://extensions` afterwards.
 * `tests/e2e/quill.html`: a plain Quill page that loads the built scripts without installing the extension. Serve the repo root (`python3 -m http.server 5174`) and open `http://127.0.0.1:5174/tests/e2e/quill.html`.
+* `npm run demo`: re-records the demo videos above in a real browser. See [demo-video/README.md](demo-video/README.md).
+
+Contributions are welcome: see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 Code layout:
 
@@ -39,6 +62,8 @@ Code layout:
 * It does not send any content to external servers, so LaTeX is processed directly in the page where you are editing.
 * Drafts and settings are stored locally in your browser.
 * No analytics or tracking are included in this extension.
+
+Full details are in the [privacy policy](PRIVACY.md).
 
 ## Credits
 Natex is built on top of [ForTex](https://github.com/marilevay/fortex), created by [Marina Levay](https://github.com/marilevay). Thank you for the original extension and the idea behind it!

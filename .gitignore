@@ -1,3 +1,18 @@
-plan/
+# Dependencies and build output
 node_modules/
 dist/
+
+# Demo videos: recordings and the personal forum link (see demo-video/README.md)
+demo-video/out/
+demo-video/target.local.json
+
+# Internal notes, prototypes and experiments (kept locally, not published)
+arc/
+plan/
+prototype/
+experiments/
+
+# OS / editor clutter
+.DS_Store
+Thumbs.db
+*.swp
