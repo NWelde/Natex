@@ -1,6 +1,7 @@
 # Dependencies and build output
 node_modules/
 dist/
+release/
 
 # Demo videos: recordings and the personal forum link (see demo-video/README.md)
 demo-video/out/
