@@ -38,6 +38,25 @@
         </div>
       </div>
     </section>
+
+    <section class="section" id="shortcuts">
+      <h2>Shortcuts <span class="count" id="snipCount"></span></h2>
+      <p>Type a trigger in the Natex editor and it expands as you type. <kbd>Tab</kbd> jumps to the next box; <kbd>Backspace</kbd> right after an expansion undoes it.</p>
+      <div class="add snip-add">
+        <input id="snipTrig" class="trig-input" placeholder="ff" maxlength="12" autocomplete="off" spellcheck="false" aria-label="Trigger" />
+        <input id="snipBody" class="body-input" placeholder="\frac{$1}{$2}$0" autocomplete="off" spellcheck="false" aria-label="Expands to" />
+        <select id="snipCtx" aria-label="Where it works">
+          <option value="math">In math</option>
+          <option value="text">In text</option>
+        </select>
+        <button class="btn-primary" id="snipSave">Add</button>
+        <button class="btn-ghost" id="snipCancel" hidden>Cancel</button>
+      </div>
+      <div class="snip-help"><code>$1</code> <code>$2</code> boxes in Tab order · <code>${1:n}</code> box with text in it · <code>$0</code> where the cursor ends</div>
+      <div id="snipStatus" class="status" role="status"></div>
+      <div class="panel" id="snipList"></div>
+      <div class="snip-foot"><a class="link" id="snipReset" href="#">Restore default shortcuts</a></div>
+    </section>
   </main>
   <script src="dist/options.js"></script>
 </body>

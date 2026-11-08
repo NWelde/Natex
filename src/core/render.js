@@ -52,7 +52,7 @@ export function renderAll(segs, katex, lastGood) {
       }
     }
     if (!seg.closed) {
-      errors.push({ message: `Missing closing ${seg.display ? '$$' : '$'}`, at: seg.start, length: seg.display ? 2 : 1 });
+      errors.push({ message: `Missing closing ${seg.close}`, at: seg.start, length: seg.open.length });
     }
   });
   return { parts, errors };

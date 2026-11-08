@@ -2,6 +2,7 @@
 // the user turn it on/off. Bundled to dist/popup.js (see build.mjs).
 
 import { HOTKEY_KEY, toHotkey, hotkeyLabels } from './src/core/hotkey.js';
+import { SNIPPETS_KEY, toSnippets } from './src/core/snippets.js';
 
 const $ = (sel) => document.querySelector(sel);
 
@@ -131,6 +132,12 @@ $('#segOn').addEventListener('click', (e) => { if (!e.currentTarget.classList.co
 $('#segOff').addEventListener('click', (e) => { if (!e.currentTarget.classList.contains('active')) disable(); });
 $('#openSettings').addEventListener('click', () => chrome.runtime.openOptionsPage());
 $('#changeHotkey').addEventListener('click', (e) => { e.preventDefault(); chrome.runtime.openOptionsPage(); });
+$('#openShortcuts').addEventListener('click', () => chrome.tabs.create({ url: chrome.runtime.getURL('options.html#shortcuts') }));
+
+async function showShortcutCount() {
+  const items = await chrome.storage.sync.get(SNIPPETS_KEY);
+  $('#shortcutCount').textContent = String(toSnippets(items[SNIPPETS_KEY]).length);
+}
 
 async function showHotkey() {
   const items = await chrome.storage.sync.get(HOTKEY_KEY);
@@ -144,3 +151,4 @@ async function showHotkey() {
 
 refresh();
 showHotkey();
+showShortcutCount();

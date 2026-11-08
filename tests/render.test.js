@@ -44,6 +44,11 @@ test('unclosed $ is an error but still previews', () => {
   assert.deepEqual(errors.map((e) => e.message), ['Missing closing $']);
 });
 
+test('unclosed \\[ names its own closer', () => {
+  const { errors } = run('\\[x^2');
+  assert.deepEqual(errors.map((e) => [e.message, e.at, e.length]), [['Missing closing \\]', 0, 2]]);
+});
+
 test('broken formula keeps the last good render, marked stale', () => {
   const lastGood = [];
   run('$\\frac{1}{2}$', lastGood);

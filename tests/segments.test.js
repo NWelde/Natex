@@ -33,3 +33,13 @@ test('inMath', () => {
   assert.equal(inMath(s, 3), true);
   assert.equal(inMath(s, 6), false);
 });
+
+test('LaTeX delimiters \\(…\\) and \\[…\\]', () => {
+  assert.deepEqual(kinds('a \\(x^2\\) b \\[y\\] c'), ['T:a ', 'M:x^2', 'T: b ', 'D:y', 'T: c']);
+  assert.deepEqual(kinds('mixed $a$ and \\(b\\)'), ['T:mixed ', 'M:a', 'T: and ', 'M:b']);
+  assert.deepEqual(kinds('\\(f(x)\\)'), ['M:f(x)']);
+  assert.deepEqual(kinds('\\[\\begin{matrix} a \\\\[2pt] b \\end{matrix}\\]'), ['D:\\begin{matrix} a \\\\[2pt] b \\end{matrix}']);
+  assert.deepEqual(kinds('\\(x'), ['M:x!']);
+  assert.deepEqual(kinds('line \\\\(not math)'), ['T:line \\\\(not math)']);
+  assert.ok(inMath('\\(ab\\)', 3));
+});

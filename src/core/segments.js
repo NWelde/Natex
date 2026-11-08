@@ -1,12 +1,24 @@
-// Splits Natex source ("text $inline$ text $$display$$") into segments.
-// `\$` is a literal dollar sign. Pure: no DOM, safe to unit-test in Node.
+// Splits Natex source ("text $inline$ text $$display$$", or with \(…\) and
+// \[…\]) into segments. `\$` is a literal dollar sign. Pure: no DOM, safe to
+// unit-test in Node.
 
 /**
  * @typedef {{ kind: 'text', start: number, end: number, value: string }} TextSegment
  * @typedef {{ kind: 'math', start: number, end: number, texStart: number, texEnd: number,
- *             tex: string, display: boolean, closed: boolean }} MathSegment
+ *             tex: string, display: boolean, closed: boolean, open: string, close: string }} MathSegment
  * @typedef {TextSegment | MathSegment} Segment
  */
+
+/** Math delimiters: TeX's `$…$` / `$$…$$` and LaTeX's `\(…\)` / `\[…\]`. */
+const DELIMITERS = [
+  { open: '$$', close: '$$', display: true },
+  { open: '$', close: '$', display: false },
+  { open: '\\[', close: '\\]', display: true },
+  { open: '\\(', close: '\\)', display: false },
+];
+
+/** The delimiter opening math at `i`, if any. */
+const opener = (source, i) => DELIMITERS.find((d) => source.startsWith(d.open, i)) ?? null;
 
 /** @param {string} source @returns {Segment[]} */
 export function parse(source) {
@@ -18,28 +30,28 @@ export function parse(source) {
   };
 
   while (i < source.length) {
-    if (source[i] === '\\') { i += 2; continue; }
-    if (source[i] !== '$') { i++; continue; }
+    const open = opener(source, i);
+    if (!open) { i += source[i] === '\\' ? 2 : 1; continue; }
 
-    const display = source[i + 1] === '$';
-    const width = display ? 2 : 1;
+    const { display, close: closer } = open;
+    const width = open.open.length;
     pushText(i);
     const texStart = i + width;
     let close = -1;
     for (let j = texStart; j < source.length; j++) {
-      if (source[j] === '\\') { j++; continue; }
-      if (source[j] === '$' && (!display || source[j + 1] === '$')) { close = j; break; }
+      if (source.startsWith(closer, j)) { close = j; break; }
+      if (source[j] === '\\') j++; // `\$`, `\\` etc. never close
     }
 
     if (close < 0) {
       segs.push({ kind: 'math', start: i, end: source.length, texStart, texEnd: source.length,
-        tex: source.slice(texStart), display, closed: false });
+        tex: source.slice(texStart), display, closed: false, open: open.open, close: closer });
       i = textStart = source.length;
       break;
     }
-    segs.push({ kind: 'math', start: i, end: close + width, texStart, texEnd: close,
-      tex: source.slice(texStart, close), display, closed: true });
-    i = textStart = close + width;
+    segs.push({ kind: 'math', start: i, end: close + closer.length, texStart, texEnd: close,
+      tex: source.slice(texStart, close), display, closed: true, open: open.open, close: closer });
+    i = textStart = close + closer.length;
   }
   pushText(source.length);
   return segs;

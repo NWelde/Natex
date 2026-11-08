@@ -9,6 +9,8 @@ import { formulaSource } from '../../core/render.js';
 import { captureTarget, captureFormula, editableFormula, insertSegments, refocus as refocusEditor } from '../editor.js';
 import { draftKey, loadDraft, saveDraft, clearDraft } from '../drafts.js';
 import { isHotkey } from '../hotkey.js';
+import { findTrigger, parseBody, shiftStops } from '../../core/snippets.js';
+import { currentSnippets } from '../snippets.js';
 import { alive, signal } from '../lifecycle.js';
 import { katexShadowCss, injectKatexFonts } from '../katex-assets.js';
 import { renderSource } from './source.js';
@@ -40,7 +42,7 @@ const TEMPLATE = `
       <button class="anyway" type="button" data-ref="anyway">Insert anyway</button>
     </div>
     <div class="foot">
-      <div class="hint"><kbd>Ctrl</kbd><kbd>↵</kbd> <span data-ref="hintVerb">insert</span> · <kbd>Esc</kbd> close</div>
+      <div class="hint"><span data-ref="tabHint" hidden><kbd>Tab</kbd> next box · </span><kbd>Ctrl</kbd><kbd>↵</kbd> <span data-ref="hintVerb">insert</span> · <kbd>Esc</kbd> close</div>
       <button class="insert" type="button" data-ref="insert">Insert</button>
     </div>
   </div>
@@ -64,6 +66,12 @@ export class Panel {
     this.shownErrors = [];
     this.confirming = false;
     this.errorTimer = 0;
+    // Shortcuts: pending tab stops, the source before the last edit (to see what
+    // changed), and the last expansion (Backspace right after it undoes it).
+    this.stops = [];
+    this.prevValue = '';
+    this.lastExpansion = null;
+    this.expanding = false;
 
     this.bindEvents();
   }
@@ -117,7 +125,7 @@ export class Panel {
     this.el.insert.textContent = editing ? 'Update' : 'Insert';
     this.el.hintVerb.textContent = editing ? 'update' : 'insert';
     this.el.draftBar.hidden = true;
-    this.el.source.value = text;
+    this.setSource(text);
     this.lastGood = [];
     this.place(target.rect);
     this.markFormula();
@@ -240,7 +248,7 @@ export class Panel {
       return;
     }
     if (this.draftKey) clearDraft(this.draftKey);
-    this.el.source.value = '';
+    this.setSource('');
     this.lastGood = [];
     this.hideConfirm();
     this.close({ refocus: false }); // the editor already put the caret after the insert
@@ -260,6 +268,102 @@ export class Panel {
     if (this.anchor) this.place();
   }
 
+  /** Replaces the whole source (open, discard, after insert); drops any shortcut state. */
+  setSource(text) {
+    this.el.source.value = text;
+    this.prevValue = text;
+    this.stops = [];
+    this.lastExpansion = null;
+    this.updateTabHint();
+  }
+
+  updateTabHint() { this.el.tabHint.hidden = !this.stops.length; }
+
+  /**
+   * Replaces source[from, to) with `text` the way typing would, so Ctrl+Z
+   * undoes it. The resulting input event runs the normal input handling.
+   */
+  replaceRange(from, to, text) {
+    const { source } = this.el;
+    this.expanding = true;
+    try {
+      source.focus();
+      source.setSelectionRange(from, to);
+      const before = source.value;
+      if (!document.execCommand('insertText', false, text) || source.value === before) {
+        source.setRangeText(text, from, to, 'end');
+        this.onInput({ inputType: 'insertReplacementText' });
+      }
+    } finally {
+      this.expanding = false;
+    }
+  }
+
+  /** Expands the shortcut whose trigger ends at `pos`. */
+  expand(snip, pos) {
+    const start = pos - snip.trig.length;
+    const { text, stops } = parseBody(snip.body);
+    const outer = this.stops.map((s) => ({ ...s }));
+    this.replaceRange(start, pos, text);
+    // Inside another shortcut, its own final stop is redundant: Tab moves on to the outer one.
+    const own = stops.map((s) => ({ start: start + s.start, end: start + s.end }));
+    if (this.stops.length) own.pop();
+    const [first, ...rest] = own;
+    this.stops = [...rest, ...this.stops];
+    const caret = first ?? { start: start + text.length, end: start + text.length };
+    this.el.source.setSelectionRange(caret.start, caret.end);
+    this.lastExpansion = { start, trig: snip.trig, length: text.length, value: this.el.source.value, outer };
+    this.updateTabHint();
+  }
+
+  /** Backspace right after an expansion puts the trigger back. @returns {boolean} whether it did */
+  undoExpansion() {
+    const x = this.lastExpansion;
+    if (!x || this.el.source.value !== x.value) return false;
+    this.replaceRange(x.start, x.start + x.length, x.trig);
+    const caret = x.start + x.trig.length;
+    this.el.source.setSelectionRange(caret, caret);
+    this.stops = x.outer;
+    this.lastExpansion = null;
+    this.updateTabHint();
+    return true;
+  }
+
+  /** Tab: go to the next pending stop. */
+  nextStop() {
+    const next = this.stops.shift();
+    if (next) this.el.source.setSelectionRange(next.start, next.end);
+    this.lastExpansion = null;
+    this.updateTabHint();
+  }
+
+  onInput(e) {
+    const { source, draftBar } = this.el;
+    // Find the edited range by comparing with the previous value, and keep stops in place.
+    const a = this.prevValue;
+    const b = source.value;
+    let p = 0;
+    while (p < a.length && p < b.length && a[p] === b[p]) p++;
+    let s = 0;
+    while (s < a.length - p && s < b.length - p && a[a.length - 1 - s] === b[b.length - 1 - s]) s++;
+    // Undo/redo can jump anywhere in history, so pending stops no longer mean anything.
+    if (/^history/.test(e.inputType)) this.stops = [];
+    else if (this.stops.length) this.stops = shiftStops(this.stops, p, a.length - p - s, b.length - p - s);
+    this.prevValue = b;
+    if (!this.expanding) this.lastExpansion = null;
+
+    if (this.confirming) this.hideConfirm();
+    draftBar.hidden = true;
+    if (this.draftKey && alive()) saveDraft(this.draftKey, b);
+    this.refresh();
+
+    if (!this.expanding && e.inputType === 'insertText' && source.selectionStart === source.selectionEnd) {
+      const snip = findTrigger(b, source.selectionStart, currentSnippets());
+      if (snip) this.expand(snip, source.selectionStart);
+    }
+    this.updateTabHint();
+  }
+
   toast(message) {
     if (!this.host.isConnected) document.documentElement.appendChild(this.host);
     const t = this.el.toast;
@@ -272,16 +376,11 @@ export class Panel {
   bindEvents() {
     const { source, toggle, insert, keep, anyway, panel, discard, draftBar } = this.el;
 
-    source.addEventListener('input', () => {
-      if (this.confirming) this.hideConfirm();
-      draftBar.hidden = true;
-      if (this.draftKey && alive()) saveDraft(this.draftKey, source.value);
-      this.refresh();
-    });
+    source.addEventListener('input', (e) => this.onInput(e));
 
     discard.addEventListener('click', () => {
       clearDraft(this.draftKey);
-      source.value = '';
+      this.setSource('');
       this.lastGood = [];
       draftBar.hidden = true;
       this.refresh({ showErrorsNow: true });
@@ -299,6 +398,9 @@ export class Panel {
         else this.close();
       } else if (e.key === 'Tab' && e.target === source) {
         e.preventDefault(); // keep focus in the source
+        if (!e.shiftKey) this.nextStop();
+      } else if (e.key === 'Backspace' && !mod && !e.altKey && e.target === source && this.undoExpansion()) {
+        e.preventDefault();
       }
       e.stopPropagation(); // don't let host-page shortcuts see keys typed into Natex
     });
