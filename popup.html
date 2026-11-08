@@ -13,37 +13,33 @@
     </div>
 
     <div class="hero">
-      <div class="hero-title">Write LaTeX, see it as you type.</div>
-      <div class="hero-sub">For Quill text boxes on the web: live preview, then insert the formulas in one go.</div>
+      <div class="hero-title">Write LaTeX in Quill editors.</div>
+      <div class="hero-sub">See your math as you type it, then drop it straight into your post.</div>
     </div>
 
     <!-- Site state: exactly one of these is visible (popup.js toggles them) -->
-    <section class="site" id="siteOff" hidden>
+    <section class="site" id="siteOn" hidden>
       <div>
         <div class="eyebrow">On this site</div>
-        <div class="domain" id="domainOff">—</div>
+        <div class="domain" id="domain">—</div>
       </div>
-      <button class="btn-primary" id="enableBtn">Enable Natex here</button>
-    </section>
-    <section class="site site-on" id="siteOn" hidden>
-      <div>
-        <div class="eyebrow">On for this site</div>
-        <div class="domain" id="domainOn">—</div>
+      <div class="seg" role="group" aria-label="Natex on this site">
+        <button type="button" id="segOn" aria-pressed="false">On</button>
+        <button type="button" id="segOff" aria-pressed="false">Off</button>
       </div>
-      <button class="switch on" id="siteSwitch" aria-label="Turn Natex off for this site"><i></i></button>
     </section>
     <section class="site" id="siteNa" hidden>
       <div>
         <div class="eyebrow">On this site</div>
-        <div class="site-note">Natex can't run on this page. Open a forum or assignment page with a text editor, then click the η icon again.</div>
+        <div class="site-note">Natex doesn't work on this page. Try it on a forum post or assignment.</div>
       </div>
     </section>
 
     <section class="how">
       <div class="eyebrow">How it works</div>
-      <div class="step"><span class="n">1</span><span>Click into a text box.</span></div>
-      <div class="step"><span class="n">2</span><span>Press <span class="keys" id="hotkeyKeys"><kbd>Ctrl</kbd><kbd>M</kbd></span> or the <b>fx</b> button to open the editor. <a class="link" id="changeHotkey" href="#">Change</a></span></div>
-      <div class="step"><span class="n">3</span><span>Write LaTeX, check the preview, insert.</span></div>
+      <div class="step"><span class="n">1</span><span>Click in a text box.</span></div>
+      <div class="step"><span class="n">2</span><span>Press <span class="keys" id="hotkeyKeys"><kbd>Ctrl</kbd><kbd>M</kbd></span> or click <b>fx</b>. <a class="link" id="changeHotkey" href="#">Change</a></span></div>
+      <div class="step"><span class="n">3</span><span>Type your LaTeX and hit <b>Insert</b>.</span></div>
     </section>
 
     <nav class="nav">

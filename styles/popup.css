@@ -8,9 +8,16 @@ body { width: 360px; }
 .hero-title code { font-size: 19px; color: var(--cobalt); }
 .hero-sub { font-size: 13px; line-height: 20px; color: var(--muted); }
 
-.domain { font-size: 15px; font-weight: 500; margin-top: 2px; word-break: break-all; }
+.domain { font-size: 15px; font-weight: 500; margin-top: 2px; }
 .site { display: flex; flex-direction: column; gap: 12px; animation: fadeUp .25s var(--ease-out); }
-.site-on { flex-direction: row; align-items: center; justify-content: space-between; gap: 12px; }
+.seg { display: flex; gap: 3px; padding: 3px; border-radius: var(--radius); background: var(--surface); }
+.seg button {
+  flex: 1; border: 0; border-radius: 4px; padding: 7px 0; background: transparent; color: var(--muted);
+  font: 600 13px var(--ui); cursor: pointer; transition: background .15s, color .15s;
+}
+.seg button:hover { color: var(--ink); }
+.seg button.active { background: var(--raised); color: var(--ink); cursor: default; }
+#segOn.active { background: var(--cobalt); color: #fff; }
 .site-note { font-size: 12px; color: var(--muted); line-height: 18px; }
 [hidden] { display: none !important; }
 

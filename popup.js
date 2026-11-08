@@ -60,10 +60,21 @@ function toast(msg) {
 }
 
 function showState(state, host) {
-  $('#siteOff').hidden = state !== 'off';
-  $('#siteOn').hidden = state !== 'on';
+  $('#siteOn').hidden = state === 'na';
   $('#siteNa').hidden = state !== 'na';
-  if (host) $('#domainOff').textContent = $('#domainOn').textContent = host;
+  const on = state === 'on';
+  $('#segOn').classList.toggle('active', on);
+  $('#segOff').classList.toggle('active', state === 'off');
+  $('#segOn').setAttribute('aria-pressed', String(on));
+  $('#segOff').setAttribute('aria-pressed', String(state === 'off'));
+  if (host) showDomain(host);
+}
+
+/** Let long hosts wrap only after a dot, never mid-word. */
+function showDomain(host) {
+  const parts = host.split('.');
+  $('#domain').replaceChildren(...parts.flatMap((p, i) =>
+    i < parts.length - 1 ? [document.createTextNode(p + '.'), document.createElement('wbr')] : [document.createTextNode(p)]));
 }
 
 async function refresh() {
@@ -116,8 +127,8 @@ document.addEventListener('click', (e) => {
   const el = e.target.closest('[data-toast]');
   if (el) { e.preventDefault(); toast(el.dataset.toast); }
 });
-$('#enableBtn').addEventListener('click', enable);
-$('#siteSwitch').addEventListener('click', disable);
+$('#segOn').addEventListener('click', (e) => { if (!e.currentTarget.classList.contains('active')) enable(); });
+$('#segOff').addEventListener('click', (e) => { if (!e.currentTarget.classList.contains('active')) disable(); });
 $('#openSettings').addEventListener('click', () => chrome.runtime.openOptionsPage());
 $('#changeHotkey').addEventListener('click', (e) => { e.preventDefault(); chrome.runtime.openOptionsPage(); });
 
